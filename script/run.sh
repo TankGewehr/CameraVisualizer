@@ -1,0 +1,1 @@
+./bin/CameraVisualizerApp ./config/config.json

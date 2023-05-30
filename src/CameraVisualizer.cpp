@@ -1,0 +1,340 @@
+#include "CameraVisualizer.h"
+
+CameraVisualizer::CameraVisualizer(std::string cam_front_left,
+                                   std::string cam_front,
+                                   std::string cam_front_right,
+                                   std::string cam_back_left,
+                                   std::string cam_back,
+                                   std::string cam_back_right,
+                                   std::string obstacle_list_topic,
+                                   std::string publish_topic) : it_(ros_nodehandle),
+                                                                cam_front_left(cam_front_left),
+                                                                cam_front(cam_front),
+                                                                cam_front_right(cam_front_right),
+                                                                cam_back_left(cam_back_left),
+                                                                cam_back(cam_back),
+                                                                cam_back_right(cam_back_right)
+{
+    this->color_list.clear();
+    this->color_list.push_back(cv::Scalar(190, 190, 190));
+    this->color_list.push_back(cv::Scalar(190, 190, 190));
+    this->color_list.push_back(cv::Scalar(190, 190, 190));
+    this->color_list.push_back(cv::Scalar(0, 255, 0));
+    this->color_list.push_back(cv::Scalar(255, 255, 0));
+    this->color_list.push_back(cv::Scalar(34, 34, 178));
+    this->color_list.push_back(cv::Scalar(240, 34, 160));
+    this->color_list.push_back(cv::Scalar(0, 165, 255));
+    this->color_list.push_back(cv::Scalar(0, 127, 255));
+    this->color_list.push_back(cv::Scalar(0, 102, 205));
+    this->color_list.push_back(cv::Scalar(255, 0, 0));
+    this->color_list.push_back(cv::Scalar(79, 79, 47));
+    this->color_list.push_back(cv::Scalar(203, 192, 255));
+    this->color_list.push_back(cv::Scalar(255, 0, 255));
+
+    this->type_list.clear();
+    this->type_list.push_back("Unknown");
+    this->type_list.push_back("Unknown");
+    this->type_list.push_back("Unknown");
+    this->type_list.push_back("Car");
+    this->type_list.push_back("Van");
+    this->type_list.push_back("Truck");
+    this->type_list.push_back("Bus");
+    this->type_list.push_back("Cyclist");
+    this->type_list.push_back("Motocyclist");
+    this->type_list.push_back("Tricyclist");
+    this->type_list.push_back("Pedestrian");
+    this->type_list.push_back("Trafficcone");
+    this->type_list.push_back("Pillar");
+    this->type_list.push_back("Speed_bump");
+
+    this->obstacle_list_topic = obstacle_list_topic;
+    this->publish_topic = publish_topic;
+
+    this->publisher = it_.advertise(this->publish_topic, 1);
+}
+
+CameraVisualizer::~CameraVisualizer() = default;
+
+void CameraVisualizer::run()
+{
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front_left(this->ros_nodehandle, this->cam_front_left.getChannel(), 15);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front(this->ros_nodehandle, this->cam_front.getChannel(), 15);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front_right(this->ros_nodehandle, this->cam_front_right.getChannel(), 15);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_left(this->ros_nodehandle, this->cam_back_left.getChannel(), 15);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back(this->ros_nodehandle, this->cam_back.getChannel(), 15);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_right(this->ros_nodehandle, this->cam_back_right.getChannel(), 15);
+    message_filters::Subscriber<ros_interface::ObstacleList> obstacle_list(this->ros_nodehandle, this->obstacle_list_topic, 15);
+
+    message_filters::Synchronizer<
+        message_filters::sync_policies::ApproximateTime<
+            sensor_msgs::CompressedImage,
+            sensor_msgs::CompressedImage,
+            sensor_msgs::CompressedImage,
+            sensor_msgs::CompressedImage,
+            sensor_msgs::CompressedImage,
+            sensor_msgs::CompressedImage,
+            ros_interface::ObstacleList>>
+        sync(
+            message_filters::sync_policies::ApproximateTime<
+                sensor_msgs::CompressedImage,
+                sensor_msgs::CompressedImage,
+                sensor_msgs::CompressedImage,
+                sensor_msgs::CompressedImage,
+                sensor_msgs::CompressedImage,
+                sensor_msgs::CompressedImage,
+                ros_interface::ObstacleList>(15),
+            cam_front_left,
+            cam_front,
+            cam_front_right,
+            cam_back_left,
+            cam_back,
+            cam_back_right,
+            obstacle_list);
+    sync.registerCallback(boost::bind(&CameraVisualizer::callback, this, _1, _2, _3, _4, _5, _6, _7));
+    ros::spin();
+}
+
+void CameraVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &cam_front_left_msg,
+                                const sensor_msgs::CompressedImage::ConstPtr &cam_front_msg,
+                                const sensor_msgs::CompressedImage::ConstPtr &cam_front_right_msg,
+                                const sensor_msgs::CompressedImage::ConstPtr &cam_back_left_msg,
+                                const sensor_msgs::CompressedImage::ConstPtr &cam_back_msg,
+                                const sensor_msgs::CompressedImage::ConstPtr &cam_back_right_msg,
+                                const ros_interface::ObstacleList::ConstPtr &obstacle_list_msg)
+{
+    std_msgs::Header header = obstacle_list_msg->header;
+    this->cam_front_left.Update(cv_bridge::toCvCopy(*cam_front_left_msg, sensor_msgs::image_encodings::BGR8)->image);
+    this->cam_front.Update(cv_bridge::toCvCopy(*cam_front_msg, sensor_msgs::image_encodings::BGR8)->image);
+    this->cam_front_right.Update(cv_bridge::toCvCopy(*cam_front_right_msg, sensor_msgs::image_encodings::BGR8)->image);
+    this->cam_back_left.Update(cv_bridge::toCvCopy(*cam_back_left_msg, sensor_msgs::image_encodings::BGR8)->image);
+    this->cam_back.Update(cv_bridge::toCvCopy(*cam_back_msg, sensor_msgs::image_encodings::BGR8)->image);
+    this->cam_back_right.Update(cv_bridge::toCvCopy(*cam_back_right_msg, sensor_msgs::image_encodings::BGR8)->image);
+
+    for (ros_interface::Obstacle obstacle : obstacle_list_msg->obstacle)
+    {
+        double x = obstacle.center_pos_vehicle.x;
+        double y = obstacle.center_pos_vehicle.y;
+        double z = obstacle.center_pos_vehicle.z;
+        double width = obstacle.width;
+        double lenght = obstacle.length;
+        double height = obstacle.height;
+        double roll = 0.0;
+        double pitch = 0.0;
+        double yaw = obstacle.theta_vehicle;
+
+        cv::Mat corners = getBox(x, y, z, width, lenght, height, roll, pitch, yaw);
+
+        int sub_type = obstacle.sub_type;
+
+        this->cam_front_left.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
+        this->cam_front.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
+        this->cam_front_right.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
+        this->cam_back_left.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
+        this->cam_back.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
+        this->cam_back_right.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
+    }
+
+    int rows = std::max(
+                   {this->cam_front_left.getSize().height,
+                    this->cam_front.getSize().height,
+                    this->cam_front_right.getSize().height}) +
+               std::max(
+                   {this->cam_back_left.getSize().height,
+                    this->cam_back.getSize().height,
+                    this->cam_back_right.getSize().height});
+    int cols = std::max(
+                   this->cam_front_left.getSize().width,
+                   this->cam_back_left.getSize().width) +
+               std::max(
+                   this->cam_front.getSize().width,
+                   this->cam_back.getSize().width) +
+               std::max(
+                   this->cam_front_right.getSize().width,
+                   this->cam_back_right.getSize().width);
+
+    cv::Mat result = cv::Mat(rows, cols, CV_8UC3);
+    this->cam_front_left.getData().copyTo(
+        result(
+            cv::Rect(
+                0,
+                0,
+                this->cam_front_left.getSize().width,
+                this->cam_front_left.getSize().height)));
+    this->cam_front.getData().copyTo(
+        result(
+            cv::Rect(
+                this->cam_front_left.getSize().width,
+                0,
+                this->cam_front.getSize().width,
+                this->cam_front.getSize().height)));
+    this->cam_front_right.getData().copyTo(
+        result(
+            cv::Rect(
+                cols - this->cam_front_right.getSize().width,
+                0,
+                this->cam_front_right.getSize().width,
+                this->cam_front_right.getSize().height)));
+    this->cam_back_left.getData().copyTo(
+        result(
+            cv::Rect(
+                0,
+                rows - this->cam_back_left.getSize().height,
+                this->cam_back_left.getSize().width,
+                this->cam_back_left.getSize().height)));
+    this->cam_back.getData().copyTo(
+        result(
+            cv::Rect(
+                this->cam_back_left.getSize().width,
+                rows - this->cam_back.getSize().height,
+                this->cam_back.getSize().width,
+                this->cam_back.getSize().height)));
+    this->cam_back_right.getData().copyTo(
+        result(
+            cv::Rect(
+                cols - this->cam_back_right.getSize().width,
+                rows - this->cam_back_right.getSize().height,
+                this->cam_back.getSize().width,
+                this->cam_back.getSize().height)));
+
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(header, "bgr8", result).toImageMsg();
+    this->publisher.publish(msg);
+    std::cout << "Maximum time difference:"
+              << std::max(
+                     {cam_front_left_msg->header.stamp,
+                      cam_front_msg->header.stamp,
+                      cam_front_right_msg->header.stamp,
+                      cam_back_left_msg->header.stamp,
+                      cam_back_msg->header.stamp,
+                      cam_back_right_msg->header.stamp}) -
+                     std::min(
+                         {cam_front_left_msg->header.stamp,
+                          cam_front_msg->header.stamp,
+                          cam_front_right_msg->header.stamp,
+                          cam_back_left_msg->header.stamp,
+                          cam_back_msg->header.stamp,
+                          cam_back_right_msg->header.stamp})
+              << std::endl;
+}
+
+Camera::Camera(std::string intrinsic_and_extrinsic_json_path)
+{
+    Json::Reader reader;
+    Json::Value root;
+
+    std::ifstream is(intrinsic_and_extrinsic_json_path, std::ios::binary);
+    if (!is.is_open())
+    {
+        std::cout << "Error opening file:" << intrinsic_and_extrinsic_json_path << std::endl;
+    }
+    else
+    {
+        if (reader.parse(is, root))
+        {
+            if (!root["channel"].isNull() && root["channel"].type() == Json::stringValue)
+            {
+                this->channel = root["channel"].asString();
+            }
+            else
+            {
+                std::cout << "Error channel type:" << intrinsic_and_extrinsic_json_path << std::endl;
+            }
+        }
+
+        is.close();
+    }
+
+    loadIntrinsic(intrinsic_and_extrinsic_json_path, this->intrinsic, this->distortion, this->image_size, false);
+    loadIntrinsic(intrinsic_and_extrinsic_json_path, this->undistort_intrinsic, this->undistort_distortion, this->image_size);
+
+    cv::Mat extrinsic;
+    loadExtrinsic(intrinsic_and_extrinsic_json_path, extrinsic);
+    this->extrinsic = extrinsic.inv();
+
+    cv::initUndistortRectifyMap(this->intrinsic, this->distortion, cv::Mat::eye(cv::Size(3, 3), CV_64F), this->intrinsic, this->image_size, CV_16SC2, this->map_x, this->map_y);
+}
+
+Camera::~Camera() = default;
+
+void Camera::Update(cv::Mat image)
+{
+    assert(image.size() == this->image_size);
+    this->image = image;
+    cv::remap(this->image, this->undistorted_image, this->map_x, this->map_y, cv::INTER_LINEAR);
+}
+
+void Camera::Draw(cv::Mat corners, cv::Scalar color, std::string type)
+{
+    // 将目标框的顶点转换到图像坐标系
+    std::vector<cv::Point2d> corners_xy;
+    for (int col = 0; col < corners.cols; col++)
+    {
+        corners_xy.push_back(
+            ProjectPoint(
+                cv::Point3d(
+                    corners.at<double>(0, col),
+                    corners.at<double>(1, col),
+                    corners.at<double>(2, col)),
+                this->extrinsic,
+                this->undistort_intrinsic));
+    }
+
+    // 在图像中绘制目标框的边
+    int err = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        if (corners_xy[i].x >= this->undistorted_image.cols || corners_xy[i].x <= 0 || corners_xy[i].y >= this->undistorted_image.rows || corners_xy[i].y <= 0)
+            err++;
+    }
+    if (err >= 6)
+        return;
+    for (int i = 0; i < 4; i++)
+    {
+        cv::line(this->undistorted_image, cv::Point(corners_xy[i].x, corners_xy[i].y), cv::Point(corners_xy[i + 4].x, corners_xy[i + 4].y), color, 2, 8);
+        cv::line(this->undistorted_image, cv::Point(corners_xy[2 * i].x, corners_xy[2 * i].y), cv::Point(corners_xy[2 * i + 1].x, corners_xy[2 * i + 1].y), color, 2, 8);
+        if (i < 2)
+        {
+            cv::line(this->undistorted_image, cv::Point(corners_xy[i].x, corners_xy[i].y), cv::Point(corners_xy[3 - i].x, corners_xy[3 - i].y), color, 2, 8);
+        }
+        else
+        {
+            cv::line(this->undistorted_image, cv::Point(corners_xy[i + 2].x, corners_xy[i + 2].y), cv::Point(corners_xy[9 - i].x, corners_xy[9 - i].y), color, 2, 8);
+        }
+    }
+
+    double A = (corners_xy[7].x - corners_xy[2].x) * (corners_xy[6].y - corners_xy[3].y) * corners_xy[2].y;
+    double B = (corners_xy[6].x - corners_xy[3].x) * (corners_xy[7].y - corners_xy[2].y) * corners_xy[3].y;
+    double C = (corners_xy[3].x - corners_xy[2].x) * (corners_xy[6].y - corners_xy[3].y) * (corners_xy[7].y - corners_xy[2].y);
+    double D = (corners_xy[7].x - corners_xy[2].x) * (corners_xy[6].y - corners_xy[3].y);
+    double E = (corners_xy[6].x - corners_xy[3].x) * (corners_xy[7].y - corners_xy[2].y);
+    double y = (A - B + C) / (D - E);
+    double x = (y - corners_xy[3].y) * (corners_xy[6].x - corners_xy[3].x) / (corners_xy[6].y - corners_xy[3].y) + corners_xy[3].x;
+    cv::arrowedLine(
+        this->undistorted_image,
+        cv::Point(
+            x,
+            y),
+        cv::Point(
+            (corners_xy[3].x + corners_xy[2].x) / 2,
+            (corners_xy[3].y + corners_xy[2].y) / 2),
+        color,
+        2,
+        8);
+    cv::putText(this->undistorted_image, type, cv::Point(corners_xy[7].x, corners_xy[7].y), 5, 0.6, color, 0.3);
+
+    return;
+}
+
+std::string Camera::getChannel() const
+{
+    return this->channel;
+}
+
+cv::Size Camera::getSize() const
+{
+    return this->image_size;
+}
+
+cv::Mat Camera::getData() const
+{
+    return this->undistorted_image;
+}

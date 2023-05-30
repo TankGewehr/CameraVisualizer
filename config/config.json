@@ -1,0 +1,12 @@
+{
+    "calibration_params_path":{
+        "cam_front_left":"./config/sensors/cam_left_front.json",
+        "cam_front":"./config/sensors/cam_front_center.json",
+        "cam_front_right":"./config/sensors/cam_right_front.json",
+        "cam_back_left":"./config/sensors/cam_left_back.json",
+        "cam_back":"./config/sensors/cam_back.json",
+        "cam_back_right":"./config/sensors/cam_right_back.json"
+    },
+    "obstacle_list_topic":"/perception/lidar/lidar_detect/CPObstacleList",
+    "publish_topic":"/GG"
+}
