@@ -7,6 +7,6 @@
         "cam_back":"./config/sensors/cam_back.json",
         "cam_back_right":"./config/sensors/cam_right_back.json"
     },
-    "obstacle_list_topic":"/perception/lidar/lidar_detect/CPObstacleList",
-    "publish_topic":"/GG"
+    "obstacle_list_topic":"/perception/fusion/obstaclelist_fusion/FUObstacleList",
+    "publish_topic":"/CameraVisualizer"
 }
