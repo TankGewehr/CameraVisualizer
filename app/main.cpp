@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     if (!loadConfig(argv[1], cam_front_left, cam_front, cam_front_right, cam_back_left, cam_back, cam_back_right, obstacle_list_topic, publish_topic))
         return 1;
 
-    ros::init(argc, argv, "compressed_image_undistort");
+    ros::init(argc, argv, "CameraVisualizer");
     CameraVisualizer *camera_visualizer = new CameraVisualizer(
         cam_front_left,
         cam_front,
