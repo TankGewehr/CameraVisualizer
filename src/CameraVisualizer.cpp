@@ -50,7 +50,7 @@ CameraVisualizer::CameraVisualizer(std::string cam_front_left,
     this->obstacle_list_topic = obstacle_list_topic;
     this->publish_topic = publish_topic;
 
-    this->publisher = it_.advertise(this->publish_topic, 1);
+    this->publisher = it_.advertise(this->publish_topic, 15);
 }
 
 CameraVisualizer::~CameraVisualizer() = default;
@@ -65,51 +65,42 @@ void CameraVisualizer::run()
     message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_right(this->ros_nodehandle, this->cam_back_right.getChannel(), 15);
     message_filters::Subscriber<ros_interface::ObstacleList> obstacle_list(this->ros_nodehandle, this->obstacle_list_topic, 15);
 
-    message_filters::Synchronizer<
-        message_filters::sync_policies::ApproximateTime<
-            sensor_msgs::CompressedImage,
-            sensor_msgs::CompressedImage,
-            sensor_msgs::CompressedImage,
-            sensor_msgs::CompressedImage,
-            sensor_msgs::CompressedImage,
-            sensor_msgs::CompressedImage,
-            ros_interface::ObstacleList>>
-        sync(
-            message_filters::sync_policies::ApproximateTime<
-                sensor_msgs::CompressedImage,
-                sensor_msgs::CompressedImage,
-                sensor_msgs::CompressedImage,
-                sensor_msgs::CompressedImage,
-                sensor_msgs::CompressedImage,
-                sensor_msgs::CompressedImage,
-                ros_interface::ObstacleList>(15),
-            cam_front_left,
-            cam_front,
-            cam_front_right,
-            cam_back_left,
-            cam_back,
-            cam_back_right,
-            obstacle_list);
-    sync.registerCallback(boost::bind(&CameraVisualizer::callback, this, _1, _2, _3, _4, _5, _6, _7));
-    ros::spin();
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_left_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_front_left, obstacle_list);
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_front, obstacle_list);
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_right_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_front_right, obstacle_list);
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_back_left_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_back_left, obstacle_list);
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_back_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_back, obstacle_list);
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_back_right_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_back_right, obstacle_list);
+    
+    // cam_front_left_sync.setInterMessageLowerBound(ros::Duration(1));
+    // cam_front_sync.setInterMessageLowerBound(ros::Duration(1));
+    // cam_front_right_sync.setInterMessageLowerBound(ros::Duration(1));
+    // cam_back_left_sync.setInterMessageLowerBound(ros::Duration(1));
+    // cam_back_sync.setInterMessageLowerBound(ros::Duration(1));
+    // cam_back_right_sync.setInterMessageLowerBound(ros::Duration(1));
+
+    cam_front_left_sync.registerCallback(boost::bind(&CameraVisualizer::callback, this, _1, _2, this->cam_front_left));
+    cam_front_sync.registerCallback(boost::bind(&CameraVisualizer::callback, this, _1, _2, this->cam_front));
+    cam_front_right_sync.registerCallback(boost::bind(&CameraVisualizer::callback, this, _1, _2, this->cam_front_right));
+    cam_back_left_sync.registerCallback(boost::bind(&CameraVisualizer::callback, this, _1, _2, this->cam_back_left));
+    cam_back_sync.registerCallback(boost::bind(&CameraVisualizer::callback, this, _1, _2, this->cam_back));
+    cam_back_right_sync.registerCallback(boost::bind(&CameraVisualizer::callback, this, _1, _2, this->cam_back_right));
+
+    ros::Rate loop_rate(15);
+    while (ros::ok())
+    {
+        this->pub();
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
 }
 
-void CameraVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &cam_front_left_msg,
-                                const sensor_msgs::CompressedImage::ConstPtr &cam_front_msg,
-                                const sensor_msgs::CompressedImage::ConstPtr &cam_front_right_msg,
-                                const sensor_msgs::CompressedImage::ConstPtr &cam_back_left_msg,
-                                const sensor_msgs::CompressedImage::ConstPtr &cam_back_msg,
-                                const sensor_msgs::CompressedImage::ConstPtr &cam_back_right_msg,
-                                const ros_interface::ObstacleList::ConstPtr &obstacle_list_msg)
+void CameraVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &compressed_image_msg,
+                                const ros_interface::ObstacleList::ConstPtr &obstacle_list_msg,
+                                Camera &camera)
 {
-    std_msgs::Header header = obstacle_list_msg->header;
-    this->cam_front_left.Update(cv_bridge::toCvCopy(*cam_front_left_msg, sensor_msgs::image_encodings::BGR8)->image);
-    this->cam_front.Update(cv_bridge::toCvCopy(*cam_front_msg, sensor_msgs::image_encodings::BGR8)->image);
-    this->cam_front_right.Update(cv_bridge::toCvCopy(*cam_front_right_msg, sensor_msgs::image_encodings::BGR8)->image);
-    this->cam_back_left.Update(cv_bridge::toCvCopy(*cam_back_left_msg, sensor_msgs::image_encodings::BGR8)->image);
-    this->cam_back.Update(cv_bridge::toCvCopy(*cam_back_msg, sensor_msgs::image_encodings::BGR8)->image);
-    this->cam_back_right.Update(cv_bridge::toCvCopy(*cam_back_right_msg, sensor_msgs::image_encodings::BGR8)->image);
-
+    // std_msgs::Header header = obstacle_list_msg->header;
+    camera.Update(cv_bridge::toCvCopy(*compressed_image_msg, sensor_msgs::image_encodings::BGR8)->image);
     for (ros_interface::Obstacle obstacle : obstacle_list_msg->obstacle)
     {
         double x = obstacle.center_pos_vehicle.x;
@@ -126,14 +117,15 @@ void CameraVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &ca
 
         int sub_type = obstacle.sub_type;
 
-        this->cam_front_left.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
-        this->cam_front.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
-        this->cam_front_right.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
-        this->cam_back_left.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
-        this->cam_back.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
-        this->cam_back_right.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
+        camera.Draw(corners, this->color_list[sub_type], this->type_list[sub_type]);
     }
 
+    std::cout << "[" << compressed_image_msg->header.stamp << "]: "
+              << "(" << obstacle_list_msg->header.stamp - compressed_image_msg->header.stamp << ") " << camera.getChannel() << std::endl;
+}
+
+void CameraVisualizer::pub()
+{
     int rows = std::max(
                    {this->cam_front_left.getSize().height,
                     this->cam_front.getSize().height,
@@ -196,24 +188,9 @@ void CameraVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &ca
                 this->cam_back.getSize().width,
                 this->cam_back.getSize().height)));
 
-    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(header, "bgr8", result).toImageMsg();
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", result).toImageMsg();
     this->publisher.publish(msg);
-    std::cout << "Maximum time difference:"
-              << std::max(
-                     {cam_front_left_msg->header.stamp,
-                      cam_front_msg->header.stamp,
-                      cam_front_right_msg->header.stamp,
-                      cam_back_left_msg->header.stamp,
-                      cam_back_msg->header.stamp,
-                      cam_back_right_msg->header.stamp}) -
-                     std::min(
-                         {cam_front_left_msg->header.stamp,
-                          cam_front_msg->header.stamp,
-                          cam_front_right_msg->header.stamp,
-                          cam_back_left_msg->header.stamp,
-                          cam_back_msg->header.stamp,
-                          cam_back_right_msg->header.stamp})
-              << std::endl;
+    // std::cout << "Maximum time difference:"<<msg->header.stamp<<std::endl;
 }
 
 Camera::Camera(std::string intrinsic_and_extrinsic_json_path)
@@ -251,6 +228,9 @@ Camera::Camera(std::string intrinsic_and_extrinsic_json_path)
     this->extrinsic = extrinsic.inv();
 
     cv::initUndistortRectifyMap(this->intrinsic, this->distortion, cv::Mat::eye(cv::Size(3, 3), CV_64F), this->intrinsic, this->image_size, CV_16SC2, this->map_x, this->map_y);
+
+    this->image = cv::Mat::zeros(this->image_size, CV_8UC3);
+    this->undistorted_image = cv::Mat::zeros(this->image_size, CV_8UC3);
 }
 
 Camera::~Camera() = default;

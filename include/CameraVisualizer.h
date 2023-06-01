@@ -67,8 +67,6 @@ private:
     std::vector<cv::Scalar> color_list;
     std::vector<std::string> type_list;
 
-    std::vector<Camera> camera_list;
-
 public:
     CameraVisualizer(std::string cam_front_left,
                      std::string cam_front,
@@ -82,8 +80,9 @@ public:
 
     void run();
 
-    void callback(const sensor_msgs::CompressedImage::ConstPtr &cam_front_left_msg, const sensor_msgs::CompressedImage::ConstPtr &cam_front_msg,
-                  const sensor_msgs::CompressedImage::ConstPtr &cam_front_right_msg, const sensor_msgs::CompressedImage::ConstPtr &cam_back_left_msg,
-                  const sensor_msgs::CompressedImage::ConstPtr &cam_back_msg, const sensor_msgs::CompressedImage::ConstPtr &cam_back_right_msg,
-                  const ros_interface::ObstacleList::ConstPtr &obstacle_list_msg);
+    void callback(const sensor_msgs::CompressedImage::ConstPtr &cam_front_left_msg,
+                  const ros_interface::ObstacleList::ConstPtr &obstacle_list_msg,
+                  Camera &camera);
+
+    void pub();
 };
