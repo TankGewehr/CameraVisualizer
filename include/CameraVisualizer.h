@@ -84,5 +84,5 @@ public:
                   const ros_interface::ObstacleList::ConstPtr &obstacle_list_msg,
                   Camera &camera);
 
-    void pub();
+    void publish();
 };

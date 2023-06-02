@@ -57,21 +57,21 @@ CameraVisualizer::~CameraVisualizer() = default;
 
 void CameraVisualizer::run()
 {
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front_left(this->ros_nodehandle, this->cam_front_left.getChannel(), 15);
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front(this->ros_nodehandle, this->cam_front.getChannel(), 15);
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front_right(this->ros_nodehandle, this->cam_front_right.getChannel(), 15);
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_left(this->ros_nodehandle, this->cam_back_left.getChannel(), 15);
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back(this->ros_nodehandle, this->cam_back.getChannel(), 15);
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_right(this->ros_nodehandle, this->cam_back_right.getChannel(), 15);
-    message_filters::Subscriber<ros_interface::ObstacleList> obstacle_list(this->ros_nodehandle, this->obstacle_list_topic, 15);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front_left(this->ros_nodehandle, this->cam_front_left.getChannel(), 30);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front(this->ros_nodehandle, this->cam_front.getChannel(), 30);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front_right(this->ros_nodehandle, this->cam_front_right.getChannel(), 30);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_left(this->ros_nodehandle, this->cam_back_left.getChannel(), 30);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back(this->ros_nodehandle, this->cam_back.getChannel(), 30);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_right(this->ros_nodehandle, this->cam_back_right.getChannel(), 30);
+    message_filters::Subscriber<ros_interface::ObstacleList> obstacle_list(this->ros_nodehandle, this->obstacle_list_topic, 30);
 
-    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_left_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_front_left, obstacle_list);
-    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_front, obstacle_list);
-    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_right_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_front_right, obstacle_list);
-    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_back_left_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_back_left, obstacle_list);
-    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_back_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_back, obstacle_list);
-    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_back_right_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(15), cam_back_right, obstacle_list);
-    
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_left_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(30), cam_front_left, obstacle_list);
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(30), cam_front, obstacle_list);
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_right_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(30), cam_front_right, obstacle_list);
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_back_left_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(30), cam_back_left, obstacle_list);
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_back_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(30), cam_back, obstacle_list);
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_back_right_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(30), cam_back_right, obstacle_list);
+
     // cam_front_left_sync.setInterMessageLowerBound(ros::Duration(1));
     // cam_front_sync.setInterMessageLowerBound(ros::Duration(1));
     // cam_front_right_sync.setInterMessageLowerBound(ros::Duration(1));
@@ -89,7 +89,7 @@ void CameraVisualizer::run()
     ros::Rate loop_rate(15);
     while (ros::ok())
     {
-        this->pub();
+        this->publish();
         ros::spinOnce();
         loop_rate.sleep();
     }
@@ -124,67 +124,66 @@ void CameraVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &co
               << "(" << obstacle_list_msg->header.stamp - compressed_image_msg->header.stamp << ") " << camera.getChannel() << std::endl;
 }
 
-void CameraVisualizer::pub()
+void CameraVisualizer::publish()
 {
-    int rows = std::max(
-                   {this->cam_front_left.getSize().height,
-                    this->cam_front.getSize().height,
-                    this->cam_front_right.getSize().height}) +
-               std::max(
-                   {this->cam_back_left.getSize().height,
-                    this->cam_back.getSize().height,
-                    this->cam_back_right.getSize().height});
-    int cols = std::max(
-                   this->cam_front_left.getSize().width,
-                   this->cam_back_left.getSize().width) +
-               std::max(
-                   this->cam_front.getSize().width,
-                   this->cam_back.getSize().width) +
-               std::max(
-                   this->cam_front_right.getSize().width,
-                   this->cam_back_right.getSize().width);
+    int rows =
+        this->cam_front.getSize().height * 2 +
+        this->cam_back.getSize().height * 2 +
+        std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height) +
+        std::max(this->cam_back_left.getSize().height, this->cam_back_right.getSize().height);
+    int cols = std::max({
+        this->cam_front.getSize().width * 2,
+        this->cam_back.getSize().width * 2,
+        this->cam_front_left.getSize().width + this->cam_front_right.getSize().width,
+        this->cam_back_left.getSize().width + this->cam_back_right.getSize().width,
+    });
 
     cv::Mat result = cv::Mat(rows, cols, CV_8UC3);
+    
+    cv::Mat front,back;
+    cv::resize(this->cam_front.getData(),front,this->cam_front.getSize()*2);
+    cv::resize(this->cam_back.getData(),back,this->cam_back.getSize()*2);
+    front.copyTo(
+        result(
+            cv::Rect(
+                0,
+                0,
+                this->cam_front.getSize().width*2,
+                this->cam_front.getSize().height*2)));
+    back.copyTo(
+        result(
+            cv::Rect(
+                0,
+                this->cam_front.getSize().height*2,
+                this->cam_back.getSize().width*2,
+                this->cam_back.getSize().height*2)));
     this->cam_front_left.getData().copyTo(
         result(
             cv::Rect(
                 0,
-                0,
+                this->cam_front.getSize().height*2+this->cam_back.getSize().height*2,
                 this->cam_front_left.getSize().width,
                 this->cam_front_left.getSize().height)));
-    this->cam_front.getData().copyTo(
-        result(
-            cv::Rect(
-                this->cam_front_left.getSize().width,
-                0,
-                this->cam_front.getSize().width,
-                this->cam_front.getSize().height)));
     this->cam_front_right.getData().copyTo(
         result(
             cv::Rect(
-                cols - this->cam_front_right.getSize().width,
-                0,
+                this->cam_front_left.getSize().width,
+                this->cam_front.getSize().height*2+this->cam_back.getSize().height*2,
                 this->cam_front_right.getSize().width,
                 this->cam_front_right.getSize().height)));
     this->cam_back_left.getData().copyTo(
         result(
             cv::Rect(
                 0,
-                rows - this->cam_back_left.getSize().height,
+                this->cam_front.getSize().height*2+this->cam_back.getSize().height*2+std::max(this->cam_front_left.getSize().height,this->cam_front_right.getSize().height),
                 this->cam_back_left.getSize().width,
                 this->cam_back_left.getSize().height)));
-    this->cam_back.getData().copyTo(
-        result(
-            cv::Rect(
-                this->cam_back_left.getSize().width,
-                rows - this->cam_back.getSize().height,
-                this->cam_back.getSize().width,
-                this->cam_back.getSize().height)));
+    
     this->cam_back_right.getData().copyTo(
         result(
             cv::Rect(
-                cols - this->cam_back_right.getSize().width,
-                rows - this->cam_back_right.getSize().height,
+                this->cam_back_left.getSize().width,
+                this->cam_front.getSize().height*2+this->cam_back.getSize().height*2+std::max(this->cam_front_left.getSize().height,this->cam_front_right.getSize().height),
                 this->cam_back.getSize().width,
                 this->cam_back.getSize().height)));
 
@@ -238,7 +237,8 @@ Camera::~Camera() = default;
 void Camera::Update(cv::Mat image)
 {
     assert(image.size() == this->image_size);
-    this->image = image;
+    image.copyTo(this->image);
+    // this->image = image;
     cv::remap(this->image, this->undistorted_image, this->map_x, this->map_y, cv::INTER_LINEAR);
 }
 
