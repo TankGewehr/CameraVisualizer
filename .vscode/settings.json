@@ -85,5 +85,5 @@
         "cstdbool": "cpp",
         "core": "cpp"
     },
-    "cmake.sourceDirectory": "/media/hrz/workspace/CameraVisualizer"
+    "cmake.sourceDirectory": "/media/hrz/workspace/Visualizer"
 }

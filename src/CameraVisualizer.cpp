@@ -121,7 +121,8 @@ void CameraVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &co
     }
 
     std::cout << "[" << compressed_image_msg->header.stamp << "]: "
-              << "(" << obstacle_list_msg->header.stamp - compressed_image_msg->header.stamp << ") " << camera.getChannel() << std::endl;
+              << "(" << obstacle_list_msg->header.stamp - compressed_image_msg->header.stamp << ") "
+              << camera.getChannel() << std::endl;
 }
 
 void CameraVisualizer::publish()
@@ -139,57 +140,56 @@ void CameraVisualizer::publish()
     });
 
     cv::Mat result = cv::Mat(rows, cols, CV_8UC3);
-    
-    cv::Mat front,back;
-    cv::resize(this->cam_front.getData(),front,this->cam_front.getSize()*2);
-    cv::resize(this->cam_back.getData(),back,this->cam_back.getSize()*2);
+
+    cv::Mat front, back;
+    cv::resize(this->cam_front.getData(), front, this->cam_front.getSize() * 2);
+    cv::resize(this->cam_back.getData(), back, this->cam_back.getSize() * 2);
     front.copyTo(
         result(
             cv::Rect(
                 0,
                 0,
-                this->cam_front.getSize().width*2,
-                this->cam_front.getSize().height*2)));
+                this->cam_front.getSize().width * 2,
+                this->cam_front.getSize().height * 2)));
     back.copyTo(
         result(
             cv::Rect(
                 0,
-                this->cam_front.getSize().height*2,
-                this->cam_back.getSize().width*2,
-                this->cam_back.getSize().height*2)));
+                this->cam_front.getSize().height * 2,
+                this->cam_back.getSize().width * 2,
+                this->cam_back.getSize().height * 2)));
     this->cam_front_left.getData().copyTo(
         result(
             cv::Rect(
                 0,
-                this->cam_front.getSize().height*2+this->cam_back.getSize().height*2,
+                this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2,
                 this->cam_front_left.getSize().width,
                 this->cam_front_left.getSize().height)));
     this->cam_front_right.getData().copyTo(
         result(
             cv::Rect(
                 this->cam_front_left.getSize().width,
-                this->cam_front.getSize().height*2+this->cam_back.getSize().height*2,
+                this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2,
                 this->cam_front_right.getSize().width,
                 this->cam_front_right.getSize().height)));
     this->cam_back_left.getData().copyTo(
         result(
             cv::Rect(
                 0,
-                this->cam_front.getSize().height*2+this->cam_back.getSize().height*2+std::max(this->cam_front_left.getSize().height,this->cam_front_right.getSize().height),
+                this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2 + std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height),
                 this->cam_back_left.getSize().width,
                 this->cam_back_left.getSize().height)));
-    
+
     this->cam_back_right.getData().copyTo(
         result(
             cv::Rect(
                 this->cam_back_left.getSize().width,
-                this->cam_front.getSize().height*2+this->cam_back.getSize().height*2+std::max(this->cam_front_left.getSize().height,this->cam_front_right.getSize().height),
+                this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2 + std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height),
                 this->cam_back.getSize().width,
                 this->cam_back.getSize().height)));
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", result).toImageMsg();
     this->publisher.publish(msg);
-    // std::cout << "Maximum time difference:"<<msg->header.stamp<<std::endl;
 }
 
 Camera::Camera(std::string intrinsic_and_extrinsic_json_path)
@@ -238,7 +238,6 @@ void Camera::Update(cv::Mat image)
 {
     assert(image.size() == this->image_size);
     image.copyTo(this->image);
-    // this->image = image;
     cv::remap(this->image, this->undistorted_image, this->map_x, this->map_y, cv::INTER_LINEAR);
 }
 
