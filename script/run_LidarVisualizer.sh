@@ -1,0 +1,1 @@
+./bin/LidarVisualizer ./config/config.json

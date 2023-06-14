@@ -5,11 +5,34 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name":"test(gdp)启动",
+            "name":"CameraVisualizer(gdp)启动",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/bin/CameraVisualizerApp",
-            "args": [],
+            "program": "${workspaceRoot}/bin/CameraVisualizer",
+            "args": [
+                "config/config.json"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceRoot}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name":"LidarVisualizer(gdp)启动",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/bin/LidarVisualizer",
+            "args": [
+                "config/config.json"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",
             "environment": [],
