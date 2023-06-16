@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <ros/ros.h>
 #include <opencv2/opencv.hpp>
