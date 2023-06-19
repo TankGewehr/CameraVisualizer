@@ -45,14 +45,10 @@ cv::Mat eular_to_matrix(double roll, double pitch, double yaw)
 
 cv::Point2d ProjectPoint(cv::Point3d origin_xyz, cv::Mat extrinsic, cv::Mat intrinsic)
 {
-    cv::Mat origin_point = cv::Mat::zeros(4, 1, CV_64FC1);
-    origin_point.at<double>(0, 0) = origin_xyz.x;
-    origin_point.at<double>(1, 0) = origin_xyz.y;
-    origin_point.at<double>(2, 0) = origin_xyz.z;
-    origin_point.at<double>(3, 0) = 1;
-
+    cv::Mat origin_point = (cv::Mat_<double>(4, 1) << origin_xyz.x, origin_xyz.y, origin_xyz.z, 1.0);
     cv::Mat camera_point = (extrinsic * origin_point)(cv::Range(0, 3), cv::Range(0, 1));
-    if (camera_point.at<double>(2, 0) < -1)
+
+    if (camera_point.at<double>(2, 0) < 0.1)
     {
         return cv::Point2d(-1.0, -1.0);
     }
