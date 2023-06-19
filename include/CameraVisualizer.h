@@ -68,6 +68,9 @@ private:
     std::vector<cv::Scalar> color_list;
     std::vector<std::string> type_list;
 
+    cv::Size image_size; // 图像大小
+    cv::Mat image;       // 图像
+
 public:
     CameraVisualizer(std::string cam_front_left,
                      std::string cam_front,

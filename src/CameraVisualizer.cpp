@@ -47,6 +47,20 @@ CameraVisualizer::CameraVisualizer(std::string cam_front_left,
     this->type_list.push_back("Pillar");
     this->type_list.push_back("Speed_bump");
 
+    int rows = this->cam_front.getSize().height * 2 +
+               this->cam_back.getSize().height * 2 +
+               std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height) +
+               std::max(this->cam_back_left.getSize().height, this->cam_back_right.getSize().height);
+    int cols = std::max({
+        this->cam_front.getSize().width * 2,
+        this->cam_back.getSize().width * 2,
+        this->cam_front_left.getSize().width + this->cam_front_right.getSize().width,
+        this->cam_back_left.getSize().width + this->cam_back_right.getSize().width,
+    });
+
+    this->image_size = cv::Size(cols, rows);
+    this->image = cv::Mat::zeros(this->image_size, CV_8UC3);
+
     this->obstacle_list_topic = obstacle_list_topic;
     this->publish_topic = publish_topic;
 
@@ -127,53 +141,39 @@ void CameraVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &co
 
 void CameraVisualizer::publish()
 {
-    int rows =
-        this->cam_front.getSize().height * 2 +
-        this->cam_back.getSize().height * 2 +
-        std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height) +
-        std::max(this->cam_back_left.getSize().height, this->cam_back_right.getSize().height);
-    int cols = std::max({
-        this->cam_front.getSize().width * 2,
-        this->cam_back.getSize().width * 2,
-        this->cam_front_left.getSize().width + this->cam_front_right.getSize().width,
-        this->cam_back_left.getSize().width + this->cam_back_right.getSize().width,
-    });
-
-    cv::Mat result = cv::Mat(rows, cols, CV_8UC3);
-
     cv::Mat front, back;
     cv::resize(this->cam_front.getData(), front, this->cam_front.getSize() * 2);
     cv::resize(this->cam_back.getData(), back, this->cam_back.getSize() * 2);
     front.copyTo(
-        result(
+        this->image(
             cv::Rect(
                 0,
                 0,
                 this->cam_front.getSize().width * 2,
                 this->cam_front.getSize().height * 2)));
     back.copyTo(
-        result(
+        this->image(
             cv::Rect(
                 0,
                 this->cam_front.getSize().height * 2,
                 this->cam_back.getSize().width * 2,
                 this->cam_back.getSize().height * 2)));
     this->cam_front_left.getData().copyTo(
-        result(
+        this->image(
             cv::Rect(
                 0,
                 this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2,
                 this->cam_front_left.getSize().width,
                 this->cam_front_left.getSize().height)));
     this->cam_front_right.getData().copyTo(
-        result(
+        this->image(
             cv::Rect(
                 this->cam_front_left.getSize().width,
                 this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2,
                 this->cam_front_right.getSize().width,
                 this->cam_front_right.getSize().height)));
     this->cam_back_left.getData().copyTo(
-        result(
+        this->image(
             cv::Rect(
                 0,
                 this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2 + std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height),
@@ -181,14 +181,14 @@ void CameraVisualizer::publish()
                 this->cam_back_left.getSize().height)));
 
     this->cam_back_right.getData().copyTo(
-        result(
+        this->image(
             cv::Rect(
                 this->cam_back_left.getSize().width,
                 this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2 + std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height),
                 this->cam_back.getSize().width,
                 this->cam_back.getSize().height)));
 
-    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", result).toImageMsg();
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", this->image).toImageMsg();
     this->publisher.publish(msg);
 }
 
@@ -247,57 +247,37 @@ void Camera::Draw(cv::Mat corners, cv::Scalar color, std::string type)
     std::vector<cv::Point2d> corners_xy;
     for (int col = 0; col < corners.cols; col++)
     {
-        corners_xy.push_back(
-            ProjectPoint(
-                cv::Point3d(
-                    corners.at<double>(0, col),
-                    corners.at<double>(1, col),
-                    corners.at<double>(2, col)),
-                this->extrinsic,
-                this->undistort_intrinsic));
+        cv::Mat origin_point = (cv::Mat_<double>(4, 1) << corners.at<double>(0, col), corners.at<double>(1, col), corners.at<double>(2, col), 1.0);
+        cv::Mat camera_point = (this->extrinsic * origin_point)(cv::Range(0, 3), cv::Range(0, 1));
+
+        if (camera_point.at<double>(2, 0) < 0.1)
+        {
+            return;
+        }
+
+        cv::Mat result_point = this->undistort_intrinsic * camera_point;
+        double result_x, result_y;
+        result_x = result_point.at<double>(0, 0) / result_point.at<double>(2, 0);
+        result_y = result_point.at<double>(1, 0) / result_point.at<double>(2, 0);
+
+        corners_xy.push_back(cv::Point2d(result_x, result_y));
     }
 
-    // 在图像中绘制目标框的边
-    int err = 0;
-    for (int i = 0; i < 8; i++)
-    {
-        if (corners_xy[i].x >= this->undistorted_image.cols || corners_xy[i].x <= 0 || corners_xy[i].y >= this->undistorted_image.rows || corners_xy[i].y <= 0)
-            err++;
-    }
-    if (err >= 6)
-        return;
-    for (int i = 0; i < 4; i++)
-    {
-        cv::line(this->undistorted_image, cv::Point(corners_xy[i].x, corners_xy[i].y), cv::Point(corners_xy[i + 4].x, corners_xy[i + 4].y), color, 2, 8);
-        cv::line(this->undistorted_image, cv::Point(corners_xy[2 * i].x, corners_xy[2 * i].y), cv::Point(corners_xy[2 * i + 1].x, corners_xy[2 * i + 1].y), color, 2, 8);
-        if (i < 2)
-        {
-            cv::line(this->undistorted_image, cv::Point(corners_xy[i].x, corners_xy[i].y), cv::Point(corners_xy[3 - i].x, corners_xy[3 - i].y), color, 2, 8);
-        }
-        else
-        {
-            cv::line(this->undistorted_image, cv::Point(corners_xy[i + 2].x, corners_xy[i + 2].y), cv::Point(corners_xy[9 - i].x, corners_xy[9 - i].y), color, 2, 8);
-        }
-    }
+    // 在图像中绘制目标框的边、头指向、类别
+    cv::line(this->undistorted_image, corners_xy[0], corners_xy[1], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[1], corners_xy[2], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[2], corners_xy[3], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[3], corners_xy[0], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[4], corners_xy[5], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[5], corners_xy[6], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[6], corners_xy[7], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[7], corners_xy[4], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[0], corners_xy[4], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[1], corners_xy[5], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[2], corners_xy[6], color, 2, 8);
+    cv::line(this->undistorted_image, corners_xy[3], corners_xy[7], color, 2, 8);
 
-    double A = (corners_xy[7].x - corners_xy[2].x) * (corners_xy[6].y - corners_xy[3].y) * corners_xy[2].y;
-    double B = (corners_xy[6].x - corners_xy[3].x) * (corners_xy[7].y - corners_xy[2].y) * corners_xy[3].y;
-    double C = (corners_xy[3].x - corners_xy[2].x) * (corners_xy[6].y - corners_xy[3].y) * (corners_xy[7].y - corners_xy[2].y);
-    double D = (corners_xy[7].x - corners_xy[2].x) * (corners_xy[6].y - corners_xy[3].y);
-    double E = (corners_xy[6].x - corners_xy[3].x) * (corners_xy[7].y - corners_xy[2].y);
-    double y = (A - B + C) / (D - E);
-    double x = (y - corners_xy[3].y) * (corners_xy[6].x - corners_xy[3].x) / (corners_xy[6].y - corners_xy[3].y) + corners_xy[3].x;
-    cv::arrowedLine(
-        this->undistorted_image,
-        cv::Point(
-            x,
-            y),
-        cv::Point(
-            (corners_xy[3].x + corners_xy[2].x) / 2,
-            (corners_xy[3].y + corners_xy[2].y) / 2),
-        color,
-        2,
-        8);
+    cv::arrowedLine(this->undistorted_image, (corners_xy[2] + corners_xy[3] + corners_xy[6] + corners_xy[7]) / 4, (corners_xy[2] + corners_xy[3]) / 2, color, 2, 8);
     cv::putText(this->undistorted_image, type, cv::Point(corners_xy[7].x, corners_xy[7].y), 5, 0.6, color, 0.3);
 
     return;
