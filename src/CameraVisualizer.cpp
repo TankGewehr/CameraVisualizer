@@ -7,8 +7,7 @@ CameraVisualizer::CameraVisualizer(std::string cam_front_left,
                                    std::string cam_back,
                                    std::string cam_back_right,
                                    std::string obstacle_list_topic,
-                                   std::string publish_topic) : it_(ros_nodehandle),
-                                                                cam_front_left(cam_front_left),
+                                   std::string publish_topic) : cam_front_left(cam_front_left),
                                                                 cam_front(cam_front),
                                                                 cam_front_right(cam_front_right),
                                                                 cam_back_left(cam_back_left),
@@ -47,15 +46,15 @@ CameraVisualizer::CameraVisualizer(std::string cam_front_left,
     this->type_list.push_back("Pillar");
     this->type_list.push_back("Speed_bump");
 
-    int rows = this->cam_front.getSize().height * 2 +
-               this->cam_back.getSize().height * 2 +
-               std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height) +
-               std::max(this->cam_back_left.getSize().height, this->cam_back_right.getSize().height);
+    int rows = this->cam_front.getSize().height +
+               this->cam_back.getSize().height +
+               std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height) / 2 +
+               std::max(this->cam_back_left.getSize().height, this->cam_back_right.getSize().height) / 2;
     int cols = std::max({
-        this->cam_front.getSize().width * 2,
-        this->cam_back.getSize().width * 2,
-        this->cam_front_left.getSize().width + this->cam_front_right.getSize().width,
-        this->cam_back_left.getSize().width + this->cam_back_right.getSize().width,
+        this->cam_front.getSize().width,
+        this->cam_back.getSize().width,
+        this->cam_front_left.getSize().width / 2 + this->cam_front_right.getSize().width / 2,
+        this->cam_back_left.getSize().width / 2 + this->cam_back_right.getSize().width / 2,
     });
 
     this->image_size = cv::Size(cols, rows);
@@ -64,7 +63,7 @@ CameraVisualizer::CameraVisualizer(std::string cam_front_left,
     this->obstacle_list_topic = obstacle_list_topic;
     this->publish_topic = publish_topic;
 
-    this->publisher = it_.advertise(this->publish_topic, 15);
+    this->publisher = this->ros_nodehandle.advertise<sensor_msgs::CompressedImage>(this->publish_topic, 15);
 }
 
 CameraVisualizer::~CameraVisualizer() = default;
@@ -121,13 +120,13 @@ void CameraVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &co
         double y = obstacle.center_pos_vehicle.y;
         double z = obstacle.center_pos_vehicle.z;
         double width = obstacle.width;
-        double lenght = obstacle.length;
+        double length = obstacle.length;
         double height = obstacle.height;
         double roll = 0.0;
         double pitch = 0.0;
         double yaw = obstacle.theta_vehicle;
 
-        cv::Mat corners = getBox(x, y, z, width, lenght, height, roll, pitch, yaw);
+        cv::Mat corners = getBox(x, y, z, width, length, height, roll, pitch, yaw);
 
         int sub_type = obstacle.sub_type;
 
@@ -141,54 +140,56 @@ void CameraVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &co
 
 void CameraVisualizer::publish()
 {
-    cv::Mat front, back;
-    cv::resize(this->cam_front.getData(), front, this->cam_front.getSize() * 2);
-    cv::resize(this->cam_back.getData(), back, this->cam_back.getSize() * 2);
-    front.copyTo(
+    cv::Mat front_left, front_right, back_left, back_right;
+    cv::resize(this->cam_front_left.getData(), front_left, this->cam_front_left.getSize() / 2);
+    cv::resize(this->cam_front_right.getData(), front_right, this->cam_front_right.getSize() / 2);
+    cv::resize(this->cam_back_left.getData(), back_left, this->cam_back_left.getSize() / 2);
+    cv::resize(this->cam_back_right.getData(), back_right, this->cam_back_right.getSize() / 2);
+    this->cam_front.getData().copyTo(
         this->image(
             cv::Rect(
                 0,
                 0,
-                this->cam_front.getSize().width * 2,
-                this->cam_front.getSize().height * 2)));
-    back.copyTo(
+                this->cam_front.getSize().width,
+                this->cam_front.getSize().height)));
+    this->cam_back.getData().copyTo(
         this->image(
             cv::Rect(
                 0,
-                this->cam_front.getSize().height * 2,
-                this->cam_back.getSize().width * 2,
-                this->cam_back.getSize().height * 2)));
-    this->cam_front_left.getData().copyTo(
-        this->image(
-            cv::Rect(
-                0,
-                this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2,
-                this->cam_front_left.getSize().width,
-                this->cam_front_left.getSize().height)));
-    this->cam_front_right.getData().copyTo(
-        this->image(
-            cv::Rect(
-                this->cam_front_left.getSize().width,
-                this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2,
-                this->cam_front_right.getSize().width,
-                this->cam_front_right.getSize().height)));
-    this->cam_back_left.getData().copyTo(
-        this->image(
-            cv::Rect(
-                0,
-                this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2 + std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height),
-                this->cam_back_left.getSize().width,
-                this->cam_back_left.getSize().height)));
-
-    this->cam_back_right.getData().copyTo(
-        this->image(
-            cv::Rect(
-                this->cam_back_left.getSize().width,
-                this->cam_front.getSize().height * 2 + this->cam_back.getSize().height * 2 + std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height),
+                this->cam_front.getSize().height,
                 this->cam_back.getSize().width,
                 this->cam_back.getSize().height)));
+    front_left.copyTo(
+        this->image(
+            cv::Rect(
+                0,
+                this->cam_front.getSize().height + this->cam_back.getSize().height,
+                this->cam_front_left.getSize().width / 2,
+                this->cam_front_left.getSize().height / 2)));
+    front_right.copyTo(
+        this->image(
+            cv::Rect(
+                this->cam_front_left.getSize().width / 2,
+                this->cam_front.getSize().height + this->cam_back.getSize().height,
+                this->cam_front_right.getSize().width / 2,
+                this->cam_front_right.getSize().height / 2)));
+    back_left.copyTo(
+        this->image(
+            cv::Rect(
+                0,
+                this->cam_front.getSize().height + this->cam_back.getSize().height + std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height) / 2,
+                this->cam_back_left.getSize().width / 2,
+                this->cam_back_left.getSize().height / 2)));
 
-    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", this->image).toImageMsg();
+    back_right.copyTo(
+        this->image(
+            cv::Rect(
+                this->cam_back_left.getSize().width / 2,
+                this->cam_front.getSize().height + this->cam_back.getSize().height + std::max(this->cam_front_left.getSize().height, this->cam_front_right.getSize().height) / 2,
+                this->cam_back.getSize().width / 2,
+                this->cam_back.getSize().height / 2)));
+
+    sensor_msgs::CompressedImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", this->image).toCompressedImageMsg();
     this->publisher.publish(msg);
 }
 

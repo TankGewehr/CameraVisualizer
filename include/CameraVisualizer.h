@@ -7,7 +7,6 @@
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/CompressedImage.h>
-#include <image_transport/image_transport.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include "ros_interface/ObstacleList.h"
@@ -62,8 +61,7 @@ private:
 
     ros::NodeHandle ros_nodehandle;
     ros::Subscriber subscriber;
-    image_transport::ImageTransport it_;
-    image_transport::Publisher publisher;
+    ros::Publisher publisher;
 
     std::vector<cv::Scalar> color_list;
     std::vector<std::string> type_list;

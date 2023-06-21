@@ -9,7 +9,7 @@
             "cam_back_right":"./config/sensors/cam_right_back.json"
         },
         "obstacle_list_topic":"/perception/lidar/lidar_detect/CPObstacleList",
-        "publish_topic":"/CameraVisualizer"
+        "publish_topic":"/CameraVisualizer/compressed"
     },
 
     "LidarVisualizer":{
