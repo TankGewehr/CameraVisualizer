@@ -4,7 +4,7 @@
 #include <fstream>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <opencv2/opencv.hpp>
@@ -48,6 +48,9 @@ private:
     ros::Publisher publisher;
 
     std::vector<cv::Scalar> color_list;
+
+    visualization_msgs::MarkerArray marker_array;
+    ros::Publisher publisher_rviz;
 
 public:
     LidarVisualizer(std::string channel,

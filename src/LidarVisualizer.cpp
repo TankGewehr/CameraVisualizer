@@ -24,7 +24,8 @@ LidarVisualizer::LidarVisualizer(std::string channel,
     this->obstacle_list_topic = obstacle_list_topic;
     this->publish_topic = publish_topic;
 
-    this->publisher = this->ros_nodehandle.advertise<sensor_msgs::PointCloud2>(this->publish_topic, 15);
+    this->publisher = this->ros_nodehandle.advertise<sensor_msgs::PointCloud2>(this->publish_topic+this->lidar_top.getChannel(), 15);
+    this->publisher_rviz = this->ros_nodehandle.advertise<visualization_msgs::MarkerArray>(this->publish_topic + "/MarkerArray", 0);
 }
 
 LidarVisualizer::~LidarVisualizer() = default;
@@ -55,6 +56,8 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
 {
     // std_msgs::Header header = obstacle_list_msg->header;
     lidar.Update(lidar_msg);
+    this->marker_array.markers.clear();
+    int id = 0;
 
     std::vector<cv::Mat> normal_vecs, ds;
     std::vector<cv::Scalar> colors;
@@ -65,13 +68,13 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
         double y = obstacle.center_pos_vehicle.y;
         double z = obstacle.center_pos_vehicle.z;
         double width = obstacle.width;
-        double lenght = obstacle.length;
+        double length = obstacle.length;
         double height = obstacle.height;
         double roll = 0.0;
         double pitch = 0.0;
         double yaw = obstacle.theta_vehicle;
 
-        cv::Mat corners = getBox(x, y, z, width, lenght, height, roll, pitch, yaw).t();
+        cv::Mat corners = getBox(x, y, z, width, length, height, roll, pitch, yaw).t();
 
         int sub_type = obstacle.sub_type;
 
@@ -94,6 +97,143 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
         normal_vecs.push_back(normal_vec);
         ds.push_back(d);
         colors.push_back(this->color_list[sub_type]);
+
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = this->lidar_top.getFrameId();
+        marker.header.stamp = ros::Time();
+        marker.id = id++;
+        marker.type = visualization_msgs::Marker::LINE_LIST;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.orientation.x = 0;
+        marker.pose.orientation.y = 0;
+        marker.pose.orientation.z = 0;
+        marker.pose.orientation.w = 1;
+        marker.scale.x = 0.1;
+        marker.color.a = 1.0;
+        marker.color.r = this->color_list[sub_type][2] / 255;
+        marker.color.g = this->color_list[sub_type][1] / 255;
+        marker.color.b = this->color_list[sub_type][0] / 255;
+        marker.lifetime = ros::Duration(0.2);
+
+        geometry_msgs::Point point;
+        point.x = corners.at<double>(0, 0);
+        point.y = corners.at<double>(0, 1);
+        point.z = corners.at<double>(0, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(1, 0);
+        point.y = corners.at<double>(1, 1);
+        point.z = corners.at<double>(1, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(1, 0);
+        point.y = corners.at<double>(1, 1);
+        point.z = corners.at<double>(1, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(2, 0);
+        point.y = corners.at<double>(2, 1);
+        point.z = corners.at<double>(2, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(2, 0);
+        point.y = corners.at<double>(2, 1);
+        point.z = corners.at<double>(2, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(3, 0);
+        point.y = corners.at<double>(3, 1);
+        point.z = corners.at<double>(3, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(3, 0);
+        point.y = corners.at<double>(3, 1);
+        point.z = corners.at<double>(3, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(0, 0);
+        point.y = corners.at<double>(0, 1);
+        point.z = corners.at<double>(0, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(4, 0);
+        point.y = corners.at<double>(4, 1);
+        point.z = corners.at<double>(4, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(5, 0);
+        point.y = corners.at<double>(5, 1);
+        point.z = corners.at<double>(5, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(5, 0);
+        point.y = corners.at<double>(5, 1);
+        point.z = corners.at<double>(5, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(6, 0);
+        point.y = corners.at<double>(6, 1);
+        point.z = corners.at<double>(6, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(6, 0);
+        point.y = corners.at<double>(6, 1);
+        point.z = corners.at<double>(6, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(7, 0);
+        point.y = corners.at<double>(7, 1);
+        point.z = corners.at<double>(7, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(7, 0);
+        point.y = corners.at<double>(7, 1);
+        point.z = corners.at<double>(7, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(4, 0);
+        point.y = corners.at<double>(4, 1);
+        point.z = corners.at<double>(4, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(0, 0);
+        point.y = corners.at<double>(0, 1);
+        point.z = corners.at<double>(0, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(4, 0);
+        point.y = corners.at<double>(4, 1);
+        point.z = corners.at<double>(4, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(1, 0);
+        point.y = corners.at<double>(1, 1);
+        point.z = corners.at<double>(1, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(5, 0);
+        point.y = corners.at<double>(5, 1);
+        point.z = corners.at<double>(5, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(2, 0);
+        point.y = corners.at<double>(2, 1);
+        point.z = corners.at<double>(2, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(6, 0);
+        point.y = corners.at<double>(6, 1);
+        point.z = corners.at<double>(6, 2);
+        marker.points.push_back(point);
+
+        point.x = corners.at<double>(3, 0);
+        point.y = corners.at<double>(3, 1);
+        point.z = corners.at<double>(3, 2);
+        marker.points.push_back(point);
+        point.x = corners.at<double>(7, 0);
+        point.y = corners.at<double>(7, 1);
+        point.z = corners.at<double>(7, 2);
+        marker.points.push_back(point);
+
+        point.x = x;
+        point.y = y;
+        point.z = z;
+        marker.points.push_back(point);
+        point.x = x + obstacle.velocity_vehicle.x;
+        point.y = y + obstacle.velocity_vehicle.y;
+        point.z = z + obstacle.velocity_vehicle.z;
+        marker.points.push_back(point);
+
+        this->marker_array.markers.push_back(marker);
     }
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_rgb = lidar.getData();
@@ -137,6 +277,7 @@ void LidarVisualizer::publish()
     msg.header.stamp = ros::Time::now();
     msg.header.frame_id = this->lidar_top.getFrameId();
     this->publisher.publish(msg);
+    this->publisher_rviz.publish(this->marker_array);
 }
 
 Lidar::Lidar(std::string channel, std::string frame_id) : point_cloud(new pcl::PointCloud<pcl::PointXYZI>), point_cloud_rgb(new pcl::PointCloud<pcl::PointXYZRGB>)
