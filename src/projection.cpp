@@ -2,45 +2,9 @@
 
 cv::Mat eular_to_matrix(double roll, double pitch, double yaw)
 {
-    std::vector<double> x;
-    x.push_back(1.0);
-    x.push_back(0.0);
-    x.push_back(0.0);
-    x.push_back(0.0);
-    x.push_back(cos(roll));
-    x.push_back(-sin(roll));
-    x.push_back(0.0);
-    x.push_back(sin(roll));
-    x.push_back(cos(roll));
-    cv::Mat rotX(cv::Size(3, 3), CV_64FC1, x.data());
-
-    std::vector<double> y;
-    y.push_back(cos(pitch));
-    y.push_back(0.0);
-    y.push_back(sin(pitch));
-    y.push_back(0.0);
-    y.push_back(1.0);
-    y.push_back(0.0);
-    y.push_back(-sin(pitch));
-    y.push_back(0.0);
-    y.push_back(cos(pitch));
-    cv::Mat rotY(cv::Size(3, 3), CV_64FC1, y.data());
-
-    std::vector<double> z;
-    z.push_back(cos(yaw));
-    z.push_back(-sin(yaw));
-    z.push_back(0.0);
-    z.push_back(sin(yaw));
-    z.push_back(cos(yaw));
-    z.push_back(0.0);
-    z.push_back(0.0);
-    z.push_back(0.0);
-    z.push_back(1.0);
-    cv::Mat rotZ(cv::Size(3, 3), CV_64FC1, z.data());
-
-    cv::Mat R = rotZ * rotY * rotX;
-
-    return R;
+    return (cv::Mat_<double>(3, 3) << cos(yaw), -sin(yaw), 0.0, sin(yaw), cos(yaw), 0.0, 0.0, 0.0, 1.0) *
+           (cv::Mat_<double>(3, 3) << cos(pitch), 0.0, sin(pitch), 0.0, 1.0, 0.0, -sin(pitch), 0.0, cos(pitch)) *
+           (cv::Mat_<double>(3, 3) << 1.0, 0.0, 0.0, 0.0, cos(roll), -sin(roll), 0.0, sin(roll), cos(roll));
 }
 
 cv::Point2d ProjectPoint(cv::Point3d origin_xyz, cv::Mat extrinsic, cv::Mat intrinsic)
