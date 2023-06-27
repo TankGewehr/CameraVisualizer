@@ -20,20 +20,13 @@ private:
     std::string channel;
     std::string frame_id;
 
-    pcl::PointCloud<pcl::PointXYZI>::Ptr point_cloud;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_rgb;
-
 public:
     Lidar(std::string channel, std::string frame_id);
     ~Lidar();
 
-    void Update(const sensor_msgs::PointCloud2::ConstPtr &lidar_msg);
-
     std::string getChannel() const;
 
     std::string getFrameId() const;
-
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getData() const;
 };
 
 class LidarVisualizer
@@ -48,6 +41,8 @@ private:
     ros::Publisher publisher;
 
     std::vector<cv::Scalar> color_list;
+
+    sensor_msgs::PointCloud2 msg;
 
     visualization_msgs::MarkerArray marker_array;
     ros::Publisher publisher_rviz;

@@ -24,7 +24,7 @@ LidarVisualizer::LidarVisualizer(std::string channel,
     this->obstacle_list_topic = obstacle_list_topic;
     this->publish_topic = publish_topic;
 
-    this->publisher = this->ros_nodehandle.advertise<sensor_msgs::PointCloud2>(this->publish_topic+this->lidar_top.getChannel(), 15);
+    this->publisher = this->ros_nodehandle.advertise<sensor_msgs::PointCloud2>(this->publish_topic + this->lidar_top.getChannel(), 15);
     this->publisher_rviz = this->ros_nodehandle.advertise<visualization_msgs::MarkerArray>(this->publish_topic + "/MarkerArray", 0);
 }
 
@@ -41,7 +41,7 @@ void LidarVisualizer::run()
 
     lidar_sync.registerCallback(boost::bind(&LidarVisualizer::callback, this, _1, _2, this->lidar_top));
 
-    ros::Rate loop_rate(15);
+    ros::Rate loop_rate(10);
     while (ros::ok())
     {
         this->publish();
@@ -55,7 +55,7 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
                                Lidar &lidar)
 {
     // std_msgs::Header header = obstacle_list_msg->header;
-    lidar.Update(lidar_msg);
+    this->msg = *(lidar_msg);
     this->marker_array.markers.clear();
     int id = 0;
 
@@ -77,26 +77,6 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
         cv::Mat corners = getBox(x, y, z, width, length, height, roll, pitch, yaw).t();
 
         int sub_type = obstacle.sub_type;
-
-        cv::Mat normal_vec = cv::Mat(cv::Size(1, 6), CV_64FC3);
-        normal_vec.at<cv::Vec3d>(0, 0) = (corners.at<cv::Vec3d>(0) - corners.at<cv::Vec3d>(1)).cross(corners.at<cv::Vec3d>(1) - corners.at<cv::Vec3d>(2));
-        normal_vec.at<cv::Vec3d>(1, 0) = (corners.at<cv::Vec3d>(7) - corners.at<cv::Vec3d>(6)).cross(corners.at<cv::Vec3d>(6) - corners.at<cv::Vec3d>(5));
-        normal_vec.at<cv::Vec3d>(2, 0) = (corners.at<cv::Vec3d>(0) - corners.at<cv::Vec3d>(3)).cross(corners.at<cv::Vec3d>(3) - corners.at<cv::Vec3d>(7));
-        normal_vec.at<cv::Vec3d>(3, 0) = (corners.at<cv::Vec3d>(1) - corners.at<cv::Vec3d>(5)).cross(corners.at<cv::Vec3d>(5) - corners.at<cv::Vec3d>(6));
-        normal_vec.at<cv::Vec3d>(4, 0) = (corners.at<cv::Vec3d>(0) - corners.at<cv::Vec3d>(4)).cross(corners.at<cv::Vec3d>(4) - corners.at<cv::Vec3d>(5));
-        normal_vec.at<cv::Vec3d>(5, 0) = (corners.at<cv::Vec3d>(3) - corners.at<cv::Vec3d>(2)).cross(corners.at<cv::Vec3d>(2) - corners.at<cv::Vec3d>(6));
-
-        cv::Mat d = cv::Mat(cv::Size(1, 6), CV_64FC1);
-        d.at<double>(0, 0) = normal_vec.at<cv::Vec3d>(0, 0).dot(corners.at<cv::Vec3d>(0));
-        d.at<double>(1, 0) = normal_vec.at<cv::Vec3d>(1, 0).dot(corners.at<cv::Vec3d>(7));
-        d.at<double>(2, 0) = normal_vec.at<cv::Vec3d>(2, 0).dot(corners.at<cv::Vec3d>(0));
-        d.at<double>(3, 0) = normal_vec.at<cv::Vec3d>(3, 0).dot(corners.at<cv::Vec3d>(1));
-        d.at<double>(4, 0) = normal_vec.at<cv::Vec3d>(4, 0).dot(corners.at<cv::Vec3d>(0));
-        d.at<double>(5, 0) = normal_vec.at<cv::Vec3d>(5, 0).dot(corners.at<cv::Vec3d>(3));
-
-        normal_vecs.push_back(normal_vec);
-        ds.push_back(d);
-        colors.push_back(this->color_list[sub_type]);
 
         visualization_msgs::Marker marker;
         marker.header.frame_id = this->lidar_top.getFrameId();
@@ -236,35 +216,6 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
         this->marker_array.markers.push_back(marker);
     }
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_rgb = lidar.getData();
-    for (size_t i = 0; i < point_cloud_rgb->points.size(); i++)
-    {
-        pcl::PointXYZRGB &point_rgb = point_cloud_rgb->points[i];
-        point_rgb.r = point_rgb.g = point_rgb.b = 200;
-
-        for (size_t j = 0; j < normal_vecs.size(); j++)
-        {
-            bool in_box = true;
-            for (int k = 0; k < 6; k++)
-            {
-                if ((point_rgb.x * normal_vecs[j].at<cv::Vec3d>(k, 0)[0] +
-                     point_rgb.y * normal_vecs[j].at<cv::Vec3d>(k, 0)[1] +
-                     point_rgb.z * normal_vecs[j].at<cv::Vec3d>(k, 0)[2] -
-                     ds[j].at<double>(k, 0)) >= 0)
-                {
-                    in_box = false;
-                    break;
-                }
-            }
-            if (in_box)
-            {
-                point_rgb.r = colors[j][2];
-                point_rgb.g = colors[j][1];
-                point_rgb.b = colors[j][0];
-            }
-        }
-    }
-
     std::cout << "[" << lidar_msg->header.stamp << "]: "
               << "(" << obstacle_list_msg->header.stamp - lidar_msg->header.stamp << ") "
               << lidar.getChannel() << std::endl;
@@ -272,27 +223,25 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
 
 void LidarVisualizer::publish()
 {
-    sensor_msgs::PointCloud2 msg;
-    pcl::toROSMsg(*(this->lidar_top.getData()), msg);
-    msg.header.stamp = ros::Time::now();
-    msg.header.frame_id = this->lidar_top.getFrameId();
+    this->msg.header.stamp = ros::Time::now();
+    this->msg.header.frame_id = this->lidar_top.getFrameId();
     this->publisher.publish(msg);
+    std::cout << "[" << msg.header.stamp << "]: "
+              << "(publish) "
+              << this->publish_topic + this->lidar_top.getChannel() << std::endl;
     this->publisher_rviz.publish(this->marker_array);
+    std::cout << "[" << msg.header.stamp << "]: "
+              << "(publish) "
+              << this->publish_topic + "/MarkerArray" << std::endl;
 }
 
-Lidar::Lidar(std::string channel, std::string frame_id) : point_cloud(new pcl::PointCloud<pcl::PointXYZI>), point_cloud_rgb(new pcl::PointCloud<pcl::PointXYZRGB>)
+Lidar::Lidar(std::string channel, std::string frame_id)
 {
     this->channel = channel;
     this->frame_id = frame_id;
 }
 
 Lidar::~Lidar() = default;
-
-void Lidar::Update(const sensor_msgs::PointCloud2::ConstPtr &lidar_msg)
-{
-    pcl::fromROSMsg(*lidar_msg, *(this->point_cloud));
-    pcl::copyPointCloud(*(this->point_cloud), *(this->point_cloud_rgb));
-}
 
 std::string Lidar::getChannel() const
 {
@@ -302,9 +251,4 @@ std::string Lidar::getChannel() const
 std::string Lidar::getFrameId() const
 {
     return this->frame_id;
-}
-
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr Lidar::getData() const
-{
-    return this->point_cloud_rgb;
 }
