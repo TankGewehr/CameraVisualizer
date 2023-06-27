@@ -204,6 +204,15 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
         point.z = corners.at<double>(7, 2);
         marker.points.push_back(point);
 
+        point.x = (corners.at<double>(2, 0) + corners.at<double>(3, 0) + corners.at<double>(6, 0) + corners.at<double>(7, 0)) / 4;
+        point.y = (corners.at<double>(2, 1) + corners.at<double>(3, 1) + corners.at<double>(6, 1) + corners.at<double>(7, 1)) / 4;
+        point.z = (corners.at<double>(2, 2) + corners.at<double>(3, 2) + corners.at<double>(6, 2) + corners.at<double>(7, 2)) / 4;
+        marker.points.push_back(point);
+        point.x = (corners.at<double>(2, 0) + corners.at<double>(3, 0)) / 2;
+        point.y = (corners.at<double>(2, 1) + corners.at<double>(3, 1)) / 2;
+        point.z = (corners.at<double>(2, 2) + corners.at<double>(3, 2)) / 2;
+        marker.points.push_back(point);
+
         point.x = x;
         point.y = y;
         point.z = z;
