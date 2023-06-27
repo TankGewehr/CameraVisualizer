@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(Visualizer VERSION 0.1.0)
-set(CMAKE_CXX_FLAGS "-std=c++14 -g -Wall")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)

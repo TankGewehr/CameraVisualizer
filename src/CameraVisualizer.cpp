@@ -190,7 +190,11 @@ void CameraVisualizer::publish()
                 this->cam_back.getSize().height / 2)));
 
     sensor_msgs::CompressedImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", this->image).toCompressedImageMsg();
+    msg->header.stamp = ros::Time::now();
     this->publisher.publish(msg);
+    std::cout << "[" << msg->header.stamp << "]: "
+              << "(publish) "
+              << this->publish_topic << std::endl;
 }
 
 Camera::Camera(std::string intrinsic_and_extrinsic_json_path)
