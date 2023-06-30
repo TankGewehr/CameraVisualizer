@@ -32,8 +32,8 @@ LidarVisualizer::~LidarVisualizer() = default;
 
 void LidarVisualizer::run()
 {
-    message_filters::Subscriber<sensor_msgs::PointCloud2> lidar_top(this->ros_nodehandle, this->lidar_top.getChannel(), 30);
-    message_filters::Subscriber<ros_interface::ObstacleList> obstacle_list(this->ros_nodehandle, this->obstacle_list_topic, 30);
+    message_filters::Subscriber<sensor_msgs::PointCloud2> lidar_top(this->ros_nodehandle, this->lidar_top.getChannel(), 1);
+    message_filters::Subscriber<ros_interface::ObstacleList> obstacle_list(this->ros_nodehandle, this->obstacle_list_topic, 1);
 
     message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, ros_interface::ObstacleList>> lidar_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, ros_interface::ObstacleList>(30), lidar_top, obstacle_list);
 
@@ -44,8 +44,8 @@ void LidarVisualizer::run()
     ros::Rate loop_rate(10);
     while (ros::ok())
     {
-        this->publish();
         ros::spinOnce();
+        this->publish();
         loop_rate.sleep();
     }
 }
