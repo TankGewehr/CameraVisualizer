@@ -70,13 +70,13 @@ CameraVisualizer::~CameraVisualizer() = default;
 
 void CameraVisualizer::run()
 {
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front_left(this->ros_nodehandle, this->cam_front_left.getChannel(), 30);
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front(this->ros_nodehandle, this->cam_front.getChannel(), 30);
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front_right(this->ros_nodehandle, this->cam_front_right.getChannel(), 30);
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_left(this->ros_nodehandle, this->cam_back_left.getChannel(), 30);
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back(this->ros_nodehandle, this->cam_back.getChannel(), 30);
-    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_right(this->ros_nodehandle, this->cam_back_right.getChannel(), 30);
-    message_filters::Subscriber<ros_interface::ObstacleList> obstacle_list(this->ros_nodehandle, this->obstacle_list_topic, 30);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front_left(this->ros_nodehandle, this->cam_front_left.getChannel(), 1);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front(this->ros_nodehandle, this->cam_front.getChannel(), 1);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_front_right(this->ros_nodehandle, this->cam_front_right.getChannel(), 1);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_left(this->ros_nodehandle, this->cam_back_left.getChannel(), 1);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back(this->ros_nodehandle, this->cam_back.getChannel(), 1);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> cam_back_right(this->ros_nodehandle, this->cam_back_right.getChannel(), 1);
+    message_filters::Subscriber<ros_interface::ObstacleList> obstacle_list(this->ros_nodehandle, this->obstacle_list_topic, 1);
 
     message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_left_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(30), cam_front_left, obstacle_list);
     message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>> cam_front_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, ros_interface::ObstacleList>(30), cam_front, obstacle_list);
@@ -102,8 +102,9 @@ void CameraVisualizer::run()
     ros::Rate loop_rate(15);
     while (ros::ok())
     {
-        this->publish();
         ros::spinOnce();
+        this->publish();
+        // this->show();
         loop_rate.sleep();
     }
 }
@@ -195,6 +196,14 @@ void CameraVisualizer::publish()
     std::cout << "[" << msg->header.stamp << "]: "
               << "(publish) "
               << this->publish_topic << std::endl;
+}
+
+void CameraVisualizer::show()
+{
+    cv::Mat image;
+    cv::resize(this->image,image,this->image_size/2);
+    cv::imshow(this->publish_topic,image);
+    cv::waitKey(1);
 }
 
 Camera::Camera(std::string intrinsic_and_extrinsic_json_path)

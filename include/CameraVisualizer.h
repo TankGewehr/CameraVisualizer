@@ -87,4 +87,6 @@ public:
                   Camera &camera);
 
     void publish();
+
+    void show();
 };
