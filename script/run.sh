@@ -1,0 +1,1 @@
+./bin/visualizer ./config/config.json
