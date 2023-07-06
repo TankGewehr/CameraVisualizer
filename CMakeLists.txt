@@ -41,3 +41,9 @@ target_link_libraries(CameraVisualizer ${PROJECT_NAME} ${roscpp_LIBRARIES} libjs
 
 add_executable(LidarVisualizer ${PROJECT_SOURCE_DIR}/app/run_LidarVisualizer.cpp)
 target_link_libraries(LidarVisualizer ${PROJECT_NAME} ${roscpp_LIBRARIES} libjsoncpp.so)
+
+add_executable(MapVisualizer ${PROJECT_SOURCE_DIR}/app/run_MapVisualizer.cpp)
+target_link_libraries(MapVisualizer ${PROJECT_NAME} ${roscpp_LIBRARIES} libjsoncpp.so)
+
+add_executable(RoadVisualizer ${PROJECT_SOURCE_DIR}/app/run_RoadVisualizer.cpp)
+target_link_libraries(RoadVisualizer ${PROJECT_NAME} ${roscpp_LIBRARIES} libjsoncpp.so)

@@ -1,4 +1,20 @@
 {
+    "calibration_params_path":{
+        "cam_front_left":"./config/sensors/cam_left_front.json",
+        "cam_front":"./config/sensors/cam_front_top.json",
+        "cam_front_right":"./config/sensors/cam_right_front.json",
+        "cam_back_left":"./config/sensors/cam_left_back.json",
+        "cam_back":"./config/sensors/cam_back.json",
+        "cam_back_right":"./config/sensors/cam_right_back.json",
+        "lidar_top":"./config/sensors/rslidar_points.json"
+    },
+    "obstacle_enable":true,
+    "obstacle_list_topic":"/perception/lidar/lidar_detect/CPObstacleList",
+    "lane_enable":true,
+    "lane_list_topic":"/perception/camera/condlane/LaneList",
+    "frame_id":"map",
+    "publish_topic":"/Visualizer",
+
     "CameraVisualizer":{
         "calibration_params_path":{
             "cam_front_left":"./config/sensors/cam_left_front.json",
@@ -9,13 +25,33 @@
             "cam_back_right":"./config/sensors/cam_right_back.json"
         },
         "obstacle_list_topic":"/perception/lidar/lidar_detect/CPObstacleList",
-        "publish_topic":"/CameraVisualizer/compressed"
+        "publish_topic":"/CameraVisualizer"
     },
 
     "LidarVisualizer":{
-        "channel":"/rslidar_points",
+        "calibration_params_path":{
+            "lidar_top":"./config/sensors/rslidar_points.json"
+        },
         "frame_id":"/ls_front",
         "obstacle_list_topic":"/perception/lidar/lidar_detect/CPObstacleList",
         "publish_topic":"/LidarVisualizer"
+    },
+
+    "MapVisualizer":{
+        "calibration_params_path":{
+            "lidar_top":"./config/sensors/rslidar_points.json"
+        },
+        "frame_id":"/ls_front",
+        "lane_list_topic":"/perception/camera/condlane/LaneList",
+        "publish_topic":"/MapVisualizer"
+    },
+
+    "RoadVisualizer":{
+        "calibration_params_path":{
+            "cam_front":"./config/sensors/cam_front_center.json",
+            "cam_back":"./config/sensors/cam_back.json"
+        },
+        "lane_list_topic":"/perception/camera/condlane/LaneList",
+        "publish_topic":"/RoadVisualizer"
     }
 }

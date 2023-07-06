@@ -1,0 +1,1 @@
+./bin/MapVisualizer ./config/config.json
