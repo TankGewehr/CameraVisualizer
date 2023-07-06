@@ -68,9 +68,9 @@ int main(int argc, char *argv[])
 {
     if (argc != 2)
     {
-        std::cout << "Usage: ./CameraVisualizerApp <config_json_path> \n"
+        std::cout << "Usage: ./CameraVisualizer <config_json_path> \n"
                      "example:\n"
-                     "\t./bin/CameraVisualizerApp ./config/config.json"
+                     "\t./bin/CameraVisualizer ./config/config.json"
                   << std::endl;
         return 1;
     }
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
         return 1;
 
     ros::init(argc, argv, "CameraVisualizer");
-    CameraVisualizer *camera_visualizer = new CameraVisualizer(
+    CameraVisualizer camera_visualizer(
         cam_front_left,
         cam_front,
         cam_front_right,
@@ -88,6 +88,6 @@ int main(int argc, char *argv[])
         cam_back_right,
         obstacle_list_topic,
         publish_topic);
-    camera_visualizer->run();
+    camera_visualizer.run();
     return 0;
 }

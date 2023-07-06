@@ -1,10 +1,17 @@
 #include "LidarVisualizer.h"
 
-LidarVisualizer::LidarVisualizer(std::string channel,
+LidarVisualizer::LidarVisualizer(std::string lidar_top,
                                  std::string frame_id,
                                  std::string obstacle_list_topic,
-                                 std::string publish_topic) : lidar_top(channel, frame_id)
+                                 std::string publish_topic) : lidar_top(lidar_top)
 {
+    this->lidar_top.setFrameId(frame_id);
+    this->obstacle_list_topic = obstacle_list_topic;
+    this->publish_topic = publish_topic;
+
+    this->publisher = this->ros_nodehandle.advertise<sensor_msgs::PointCloud2>(this->publish_topic + "/PointCloud2", 0);
+    this->publisher_rviz = this->ros_nodehandle.advertise<visualization_msgs::MarkerArray>(this->publish_topic + "/MarkerArray", 0);
+
     this->color_list.clear();
     this->color_list.push_back(cv::Scalar(190, 190, 190));
     this->color_list.push_back(cv::Scalar(190, 190, 190));
@@ -20,12 +27,6 @@ LidarVisualizer::LidarVisualizer(std::string channel,
     this->color_list.push_back(cv::Scalar(79, 79, 47));
     this->color_list.push_back(cv::Scalar(203, 192, 255));
     this->color_list.push_back(cv::Scalar(255, 0, 255));
-
-    this->obstacle_list_topic = obstacle_list_topic;
-    this->publish_topic = publish_topic;
-
-    this->publisher = this->ros_nodehandle.advertise<sensor_msgs::PointCloud2>(this->publish_topic + this->lidar_top.getChannel(), 15);
-    this->publisher_rviz = this->ros_nodehandle.advertise<visualization_msgs::MarkerArray>(this->publish_topic + "/MarkerArray", 0);
 }
 
 LidarVisualizer::~LidarVisualizer() = default;
@@ -54,13 +55,9 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
                                const ros_interface::ObstacleList::ConstPtr &obstacle_list_msg,
                                Lidar &lidar)
 {
-    // std_msgs::Header header = obstacle_list_msg->header;
     this->msg = *(lidar_msg);
     this->marker_array.markers.clear();
     int id = 0;
-
-    std::vector<cv::Mat> normal_vecs, ds;
-    std::vector<cv::Scalar> colors;
 
     for (ros_interface::Obstacle obstacle : obstacle_list_msg->obstacle)
     {
@@ -79,14 +76,9 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
         int sub_type = obstacle.sub_type;
 
         visualization_msgs::Marker marker;
-        marker.header.frame_id = this->lidar_top.getFrameId();
-        marker.header.stamp = ros::Time();
+        marker.header.frame_id = lidar.getFrameId();
         marker.id = id++;
         marker.type = visualization_msgs::Marker::LINE_LIST;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.orientation.x = 0;
-        marker.pose.orientation.y = 0;
-        marker.pose.orientation.z = 0;
         marker.pose.orientation.w = 1;
         marker.scale.x = 0.1;
         marker.color.a = 1.0;
@@ -232,32 +224,15 @@ void LidarVisualizer::callback(const sensor_msgs::PointCloud2::ConstPtr &lidar_m
 
 void LidarVisualizer::publish()
 {
-    this->msg.header.stamp = ros::Time::now();
     this->msg.header.frame_id = this->lidar_top.getFrameId();
+    this->msg.header.stamp = ros::Time::now();
     this->publisher.publish(msg);
-    std::cout << "[" << msg.header.stamp << "]: "
+    std::cout << "[" << this->msg.header.stamp << "]: "
               << "(publish) "
-              << this->publish_topic + this->lidar_top.getChannel() << std::endl;
+              << this->publish_topic + "/PointCloud2" << std::endl;
+
     this->publisher_rviz.publish(this->marker_array);
-    std::cout << "[" << msg.header.stamp << "]: "
+    std::cout << "[" << ros::Time::now() << "]: "
               << "(publish) "
               << this->publish_topic + "/MarkerArray" << std::endl;
-}
-
-Lidar::Lidar(std::string channel, std::string frame_id)
-{
-    this->channel = channel;
-    this->frame_id = frame_id;
-}
-
-Lidar::~Lidar() = default;
-
-std::string Lidar::getChannel() const
-{
-    return this->channel;
-}
-
-std::string Lidar::getFrameId() const
-{
-    return this->frame_id;
 }

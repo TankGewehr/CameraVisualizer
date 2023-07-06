@@ -83,7 +83,10 @@
         "queue": "cpp",
         "stack": "cpp",
         "cstdbool": "cpp",
-        "core": "cpp"
+        "core": "cpp",
+        "codecvt": "cpp",
+        "regex": "cpp",
+        "alignedvector3": "cpp"
     },
     "cmake.sourceDirectory": "/media/hrz/workspace/Visualizer"
 }

@@ -1,5 +1,5 @@
 {
-    "channel": "LIDAR_TOP",
+    "channel": "/rslidar_points",
     "modality": "lidar",
     "image_size": [],
     "intrinsic": [],
