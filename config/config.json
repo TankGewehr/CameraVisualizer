@@ -48,7 +48,7 @@
 
     "RoadVisualizer":{
         "calibration_params_path":{
-            "cam_front":"./config/sensors/cam_front_center.json",
+            "cam_front":"./config/sensors/cam_front_top.json",
             "cam_back":"./config/sensors/cam_back.json"
         },
         "lane_list_topic":"/perception/camera/condlane/LaneList",

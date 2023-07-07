@@ -42,4 +42,6 @@ public:
     void Update_(cv::Mat image);
 
     cv::Mat getData_() const;
+
+    void Draw_(cv::Point2d point, cv::Scalar color);
 };

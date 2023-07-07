@@ -129,3 +129,10 @@ cv::Mat Camera::getData_() const
 {
     return this->image;
 }
+
+void Camera::Draw_(cv::Point2d point, cv::Scalar color)
+{
+    cv::circle(this->image,point,2,color,2);
+
+    return;
+}

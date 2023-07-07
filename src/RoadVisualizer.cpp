@@ -92,7 +92,7 @@ void RoadVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &comp
             int lane_type = laneline.lane_type;
             for (ros_interface::Point2D pts : laneline.pts_image)
             {
-                camera.Draw(cv::Point2d(pts.x, pts.y), this->color_list[lane_type]);
+                camera.Draw_(cv::Point2d(pts.x, pts.y), this->color_list[lane_type]);
             }
         }
     }
