@@ -124,7 +124,7 @@ void visualizer::run(int rate)
         cam_front_sync.registerCallback(boost::bind(&visualizer::callback_camera, this, _1, _2, _3, this->cam_front, 1));
         cam_front_right_sync.registerCallback(boost::bind(&visualizer::callback_camera_obstacle, this, _1, _2, this->cam_front_right));
         cam_back_left_sync.registerCallback(boost::bind(&visualizer::callback_camera_obstacle, this, _1, _2, this->cam_back_left));
-        cam_back_sync.registerCallback(boost::bind(&visualizer::callback_camera, this, _1, _2, _3, this->cam_back, 0));
+        cam_back_sync.registerCallback(boost::bind(&visualizer::callback_camera, this, _1, _2, _3, this->cam_back, -1));
         cam_back_right_sync.registerCallback(boost::bind(&visualizer::callback_camera_obstacle, this, _1, _2, this->cam_back_right));
         lidar_sync.registerCallback(boost::bind(&visualizer::callback_lidar, this, _1, _2, _3, this->lidar_top));
 
@@ -183,7 +183,7 @@ void visualizer::run(int rate)
         message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, ros_interface::LaneList>> lidar_sync(message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, ros_interface::LaneList>(30), lidar_top, lane_list);
 
         cam_front_sync.registerCallback(boost::bind(&visualizer::callback_camera_lane, this, _1, _2, this->cam_front, 1));
-        cam_back_sync.registerCallback(boost::bind(&visualizer::callback_camera_lane, this, _1, _2, this->cam_back, 0));
+        cam_back_sync.registerCallback(boost::bind(&visualizer::callback_camera_lane, this, _1, _2, this->cam_back, -1));
         lidar_sync.registerCallback(boost::bind(&visualizer::callback_lidar_lane, this, _1, _2, this->lidar_top));
 
         ros::Rate loop_rate(rate);
@@ -228,12 +228,12 @@ void visualizer::callback_camera(const sensor_msgs::CompressedImage::ConstPtr &c
 
     for (ros_interface::LaneLine laneline : lane_list_msg->camera_laneline)
     {
-        if (pos == laneline.pos_type)
+        for (ros_interface::Point2D pts : laneline.pts_image)
         {
-            for (ros_interface::Point2D pts : laneline.pts_image)
+            if (pts.x * pos > 0 && pts.y * pos > 0)
             {
                 camera.Draw(
-                    cv::Point2d(pts.x, pts.y),
+                    cv::Point2d(pts.x * pos, pts.y * pos),
                     this->lane_color_list[laneline.lane_type]);
             }
         }
@@ -283,12 +283,12 @@ void visualizer::callback_camera_lane(const sensor_msgs::CompressedImage::ConstP
 
     for (ros_interface::LaneLine laneline : lane_list_msg->camera_laneline)
     {
-        if (pos == laneline.pos_type)
+        for (ros_interface::Point2D pts : laneline.pts_image)
         {
-            for (ros_interface::Point2D pts : laneline.pts_image)
+            if (pts.x * pos > 0 && pts.y * pos > 0)
             {
                 camera.Draw(
-                    cv::Point2d(pts.x, pts.y),
+                    cv::Point2d(pts.x * pos, pts.y * pos),
                     this->lane_color_list[laneline.lane_type]);
             }
         }

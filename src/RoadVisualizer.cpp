@@ -67,7 +67,7 @@ void RoadVisualizer::run()
     // cam_back_sync.setInterMessageLowerBound(ros::Duration(1));
 
     cam_front_sync.registerCallback(boost::bind(&RoadVisualizer::callback, this, _1, _2, this->cam_front, 1));
-    cam_back_sync.registerCallback(boost::bind(&RoadVisualizer::callback, this, _1, _2, this->cam_back, 0));
+    cam_back_sync.registerCallback(boost::bind(&RoadVisualizer::callback, this, _1, _2, this->cam_back, -1));
 
     ros::Rate loop_rate(15);
     while (ros::ok())
@@ -87,12 +87,11 @@ void RoadVisualizer::callback(const sensor_msgs::CompressedImage::ConstPtr &comp
 
     for (ros_interface::LaneLine laneline : lane_list_msg->camera_laneline)
     {
-        if (pos == laneline.pos_type)
+        for (ros_interface::Point2D pts : laneline.pts_image)
         {
-            int lane_type = laneline.lane_type;
-            for (ros_interface::Point2D pts : laneline.pts_image)
+            if (pts.x * pos > 0 && pts.y * pos > 0)
             {
-                camera.Draw_(cv::Point2d(pts.x, pts.y), this->color_list[lane_type]);
+                camera.Draw_(cv::Point2d(pts.x * pos, pts.y * pos), this->color_list[laneline.lane_type]);
             }
         }
     }
