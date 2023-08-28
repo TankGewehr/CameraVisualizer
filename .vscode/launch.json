@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name":"visualizer(gdp)启动",
+            "name":"visualizer(gdb)启动",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/bin/visualizer",
@@ -26,7 +26,7 @@
             ]
         },
         {
-            "name":"CameraVisualizer(gdp)启动",
+            "name":"CameraVisualizer(gdb)启动",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/bin/CameraVisualizer",
@@ -47,7 +47,7 @@
             ]
         },
         {
-            "name":"LidarVisualizer(gdp)启动",
+            "name":"LidarVisualizer(gdb)启动",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/bin/LidarVisualizer",
@@ -68,7 +68,7 @@
             ]
         },
         {
-            "name":"MapVisualizer(gdp)启动",
+            "name":"MapVisualizer(gdb)启动",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/bin/MapVisualizer",
@@ -89,7 +89,7 @@
             ]
         },
         {
-            "name":"RoadVisualizer(gdp)启动",
+            "name":"RoadVisualizer(gdb)启动",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/bin/RoadVisualizer",
