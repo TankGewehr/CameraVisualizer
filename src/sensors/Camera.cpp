@@ -35,6 +35,7 @@ Camera::Camera(std::string intrinsic_and_extrinsic_json_path)
     this->extrinsic = extrinsic.inv();
 
     cv::initUndistortRectifyMap(this->intrinsic, this->distortion, cv::Mat::eye(cv::Size(3, 3), CV_64F), this->intrinsic, this->image_size, CV_32FC1, this->map_x, this->map_y);
+    cv::initUndistortRectifyMap(this->undistort_intrinsic, this->undistort_distortion, cv::Mat::eye(cv::Size(3, 3), CV_64F), this->undistort_intrinsic, this->image_size, CV_32FC1, this->undistorted_map_x, this->undistorted_map_y);
 
     this->image = cv::Mat::zeros(this->image_size, CV_8UC3);
     this->undistorted_image = cv::Mat::zeros(this->image_size, CV_8UC3);
@@ -47,6 +48,7 @@ void Camera::Update(cv::Mat image)
     assert(image.size() == this->image_size);
     image.copyTo(this->image);
     cv::remap(this->image, this->undistorted_image, this->map_x, this->map_y, cv::INTER_LINEAR);
+    cv::remap(this->undistorted_image, this->undistorted_image, this->undistorted_map_x, this->undistorted_map_y, cv::INTER_LINEAR);
 }
 
 void Camera::Draw(cv::Mat corners, cv::Scalar color, std::string type)

@@ -20,6 +20,9 @@ private:
     cv::Mat map_x; // x方向的映射map
     cv::Mat map_y; // y方向的映射map
 
+    cv::Mat undistorted_map_x; // x方向的映射map
+    cv::Mat undistorted_map_y; // y方向的映射map
+
     cv::Mat image;             // 图像
     cv::Mat undistorted_image; // 去畸变后的图像
 
