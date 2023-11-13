@@ -1,7 +1,7 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
-#include "calibration_params.h"
+#include "CalibrationParam.h"
 
 class Lidar
 {
@@ -12,7 +12,7 @@ private:
     cv::Mat extrinsic;
 
 public:
-    Lidar(std::string intrinsic_and_extrinsic_json_path);
+    Lidar(std::string calibration_param_path);
     ~Lidar();
 
     void setFrameId(std::string frame_id);

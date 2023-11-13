@@ -1,35 +1,11 @@
 #include "sensors/Lidar.h"
 
-Lidar::Lidar(std::string intrinsic_and_extrinsic_json_path)
+Lidar::Lidar(std::string calibration_param_path)
 {
-    Json::Reader reader;
-    Json::Value root;
+    CalibrationParam calibration_param(calibration_param_path); // 标定参数
 
-    std::ifstream is(intrinsic_and_extrinsic_json_path, std::ios::binary);
-    if (!is.is_open())
-    {
-        std::cout << "Error opening file:" << intrinsic_and_extrinsic_json_path << std::endl;
-    }
-    else
-    {
-        if (reader.parse(is, root))
-        {
-            if (!root["channel"].isNull() && root["channel"].type() == Json::stringValue)
-            {
-                this->channel = root["channel"].asString();
-            }
-            else
-            {
-                std::cout << "Error channel type:" << intrinsic_and_extrinsic_json_path << std::endl;
-            }
-        }
-
-        is.close();
-    }
-
-    cv::Mat extrinsic;
-    loadExtrinsic(intrinsic_and_extrinsic_json_path, extrinsic);
-    this->extrinsic = extrinsic.inv();
+    this->channel = calibration_param.getChannel();
+    this->extrinsic = calibration_param.getExtrinsic().inv();
 }
 
 Lidar::~Lidar() = default;

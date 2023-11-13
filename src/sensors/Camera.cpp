@@ -1,38 +1,16 @@
 #include "sensors/Camera.h"
 
-Camera::Camera(std::string intrinsic_and_extrinsic_json_path)
+Camera::Camera(std::string calibration_param_path)
 {
-    Json::Reader reader;
-    Json::Value root;
+    CalibrationParam calibration_param(calibration_param_path); // 标定参数
 
-    std::ifstream is(intrinsic_and_extrinsic_json_path, std::ios::binary);
-    if (!is.is_open())
-    {
-        std::cout << "Error opening file:" << intrinsic_and_extrinsic_json_path << std::endl;
-    }
-    else
-    {
-        if (reader.parse(is, root))
-        {
-            if (!root["channel"].isNull() && root["channel"].type() == Json::stringValue)
-            {
-                this->channel = root["channel"].asString();
-            }
-            else
-            {
-                std::cout << "Error channel type:" << intrinsic_and_extrinsic_json_path << std::endl;
-            }
-        }
-
-        is.close();
-    }
-
-    loadIntrinsic(intrinsic_and_extrinsic_json_path, this->intrinsic, this->distortion, this->image_size, false);
-    loadIntrinsic(intrinsic_and_extrinsic_json_path, this->undistort_intrinsic, this->undistort_distortion, this->image_size);
-
-    cv::Mat extrinsic;
-    loadExtrinsic(intrinsic_and_extrinsic_json_path, extrinsic);
-    this->extrinsic = extrinsic.inv();
+    this->channel = calibration_param.getChannel();
+    this->image_size = calibration_param.getImageSize();
+    this->intrinsic = calibration_param.getIntrinsic();
+    this->distortion = calibration_param.getDistortion();
+    this->undistort_intrinsic = calibration_param.getUndistortIntrinsic();
+    this->undistort_distortion = calibration_param.getUndistortDistortion();
+    this->extrinsic = calibration_param.getExtrinsic().inv();
 
     cv::initUndistortRectifyMap(this->intrinsic, this->distortion, cv::Mat::eye(cv::Size(3, 3), CV_64F), this->intrinsic, this->image_size, CV_32FC1, this->map_x, this->map_y);
     cv::initUndistortRectifyMap(this->undistort_intrinsic, this->undistort_distortion, cv::Mat::eye(cv::Size(3, 3), CV_64F), this->undistort_intrinsic, this->image_size, CV_32FC1, this->undistorted_map_x, this->undistorted_map_y);
@@ -134,7 +112,7 @@ cv::Mat Camera::getData_() const
 
 void Camera::Draw_(cv::Point2d point, cv::Scalar color)
 {
-    cv::circle(this->image,point,2,color,2);
+    cv::circle(this->image, point, 2, color, 2);
 
     return;
 }

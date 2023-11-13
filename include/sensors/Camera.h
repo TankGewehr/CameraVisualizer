@@ -1,7 +1,7 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
-#include "calibration_params.h"
+#include "CalibrationParam.h"
 
 class Camera
 {
@@ -27,7 +27,7 @@ private:
     cv::Mat undistorted_image; // 去畸变后的图像
 
 public:
-    Camera(std::string intrinsic_and_extrinsic_json_path);
+    Camera(std::string calibration_param_path);
     ~Camera();
 
     void Update(cv::Mat image);
