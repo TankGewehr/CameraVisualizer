@@ -1,0 +1,26 @@
+{
+    "channel": "LIDAR_TOP",
+    "distortion": [],
+    "image_size": [],
+    "intrinsic": [],
+    "modality": "lidar",
+    "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+    ],
+    "target": "vehicle",
+    "translation": [
+        1.767,
+        0.0,
+        1.766
+    ],
+    "undistort_distortion": [],
+    "undistort_intrinsic": []
+}

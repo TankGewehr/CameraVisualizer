@@ -1,0 +1,22 @@
+{
+   "channel" : "/rslidar_front_center",
+   "distortion" : [],
+   "image_size" : [],
+   "intrinsic" : [],
+   "modality" : "lidar",
+   "rotation" : [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+   ],
+   "target" : "rslidar_points",
+   "translation" : [ 0.0,0.0,0.0 ],
+   "undistort_distortion" : [],
+   "undistort_intrinsic" : []
+}

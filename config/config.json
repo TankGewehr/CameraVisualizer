@@ -1,16 +1,16 @@
 {
     "calibration_params_path":{
-        "cam_front_left":"./config/sensors/cam_left_front.json",
-        "cam_front":"./config/sensors/cam_front_top.json",
-        "cam_front_right":"./config/sensors/cam_right_front.json",
-        "cam_back_left":"./config/sensors/cam_left_back.json",
-        "cam_back":"./config/sensors/cam_back.json",
-        "cam_back_right":"./config/sensors/cam_right_back.json",
-        "lidar_top":"./config/sensors/rslidar_points.json"
+        "cam_front_left":"./config/sensors_ehs9/cam_left_front.json",
+        "cam_front":"./config/sensors_ehs9/cam_front.json",
+        "cam_front_right":"./config/sensors_ehs9/cam_right_front.json",
+        "cam_back_left":"./config/sensors_ehs9/cam_left_back.json",
+        "cam_back":"./config/sensors_ehs9/cam_back.json",
+        "cam_back_right":"./config/sensors_ehs9/cam_right_back.json",
+        "lidar_top":"./config/sensors_ehs9/rslidar_points.json"
     },
     "obstacle_enable":true,
-    "obstacle_list_topic":"/perception/lidar/lidar_detect/CPObstacleList",
-    "lane_enable":true,
+    "obstacle_list_topic":"/perception/fusion/object_bevfusion/BevfusionObstacleList",
+    "lane_enable":false,
     "lane_list_topic":"/perception/camera/condlane/LaneList",
     "frame_id":"map",
     "publish_topic":"/Visualizer",
